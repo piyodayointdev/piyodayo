@@ -1,1 +1,1 @@
-test
+valorant portingなどで使用するpaksファイル
