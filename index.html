@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Piyo Profile</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body,html{width:100%;height:100%;overflow:hidden;font-family:'Jfont','Efont',sans-serif;font-size:16px;color:white;background:#000;}
+
+#background-video{
+  position:fixed; top:50%; left:50%;
+  width:110%; height:110%;
+  transform:translate3d(-50%,-50%,0) scale(1.1);
+  object-fit:cover; z-index:0; will-change: transform;
+}
+.center-box{
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  text-align:center; z-index:2;
+}
+.icon{width:150px; height:150px; border-radius:50%; overflow:hidden; box-shadow:0 0 40px rgba(255,255,255,0.6);}
+.name{margin-top:20px; font-size:32px; text-shadow:0 0 10px white;}
+.desc{margin-top:8px; font-size:18px; opacity:0.9;}
+
+/* 英文字だけ大きくする */
+.english{font-family:'Efont',sans-serif; font-size:1.1em;}
+
+/* ミュージックプレイヤー */
+.music-box{
+  position:absolute; bottom:30px; right:30px; width:450px; height:140px;
+  background:rgba(0,0,0,0.4); border-radius:25px; backdrop-filter:blur(10px);
+  padding:15px 20px; color:white; box-shadow:0 0 30px rgba(255,255,255,0.5);
+  display:flex; flex-direction:column; justify-content:space-between; z-index:2;
+}
+.music-info{font-size:18px;text-align:left;text-shadow:0 0 8px rgba(255,255,255,0.7);}
+.controls{display:flex;justify-content:flex-end;gap:15px;margin-top:10px;}
+.control-button{width:35px;height:35px;border-radius:50%;border:none;background:rgba(255,255,255,0.3);
+  backdrop-filter:blur(5px);cursor:pointer;box-shadow:0 0 10px rgba(255,255,255,0.5);
+  display:flex;align-items:center;justify-content:center;font-family:'Efont','Jfont',sans-serif;transition: transform 0.1s;}
+.control-button span.btn-text{position:relative; display:inline-block;}
+.progress-container{width:100%;height:8px;background:rgba(255,255,255,0.2);border-radius:4px;overflow:hidden;margin-top:10px;cursor:pointer;position:relative;}
+.progress-bar{width:0%;height:100%;background:rgba(255,255,255,0.7);border-radius:4px;}
+.progress-knob{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.9);position:absolute;top:50%;transform:translate(-50%,-50%);cursor:pointer;}
+.time-labels{display:flex;justify-content:space-between;font-size:12px;margin-top:3px;text-shadow:0 0 5px rgba(255,255,255,0.7);}
+.time-labels span{animation: glow 1.5s infinite alternate;}
+@keyframes glow{
+  from{text-shadow:0 0 5px #fff;}
+  to{text-shadow:0 0 15px #fff;}
+}
+
+/* 下部リンク */
+.links{position:absolute;bottom:20px;width:100%;text-align:center; z-index:2;}
+.links img{width:40px;margin:0 10px;cursor:pointer;border-radius:50%;filter:drop-shadow(0 0 var(--link-shadow,5px) white);}
+
+/* 左下バージョン */
+#version{position:absolute;bottom:20px;left:20px;color:white;text-shadow:0 0 5px black;font-size:14px; z-index:2;}
+</style>
+</head>
+<body>
+
+<video id="background-video" autoplay loop muted playsinline>
+  <source src="background.mp4" type="video/mp4">
+</video>
+
+<div id="glow"></div>
+
+<div class="center-box">
+  <img src="icon.png" class="icon">
+  <div class="name" id="name-text">ぴよだよ～＾＾</div>
+  <div class="desc" id="desc-text">説明文がここに入ります</div>
+</div>
+
+<div class="music-box">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <div class="music-info" id="current-music">曲名</div>
+    <div class="controls">
+      <button class="control-button" id="prev"><span class="btn-text">⏮</span></button>
+      <button class="control-button" id="play-pause"><span class="btn-text">▶</span></button>
+      <button class="control-button" id="next"><span class="btn-text">⏭</span></button>
+    </div>
+  </div>
+  <div class="progress-container" id="progress-container">
+    <div class="progress-bar" id="progress-bar"></div>
+    <div class="progress-knob" id="progress-knob"></div>
+  </div>
+  <div class="time-labels">
+    <span id="current-time">0:00</span>
+    <span id="total-time">0:00</span>
+  </div>
+  <audio id="audio"></audio>
+</div>
+
+<div class="links" id="links-box"></div>
+<div id="version">v1.0</div>
+
+<script>
+// ---------------- 背景パララックス ----------------
+const bg = document.getElementById('background-video');
+let mouseX=0, mouseY=0, currentX=0, currentY=0;
+document.addEventListener('mousemove', e=>{
+  mouseX=(e.clientX-window.innerWidth/2)*0.1;
+  mouseY=(e.clientY-window.innerHeight/2)*0.1;
+});
+function animateBackground(){
+  let dx=mouseX-currentX, dy=mouseY-currentY;
+  let dist=Math.sqrt(dx*dx+dy*dy);
+  let speed=dist>270?4:dist/270*4;
+  if(dist>0){currentX+=dx/dist*speed; currentY+=dy/dist*speed;}
+  bg.style.transform=`translate3d(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px),0) scale(1.1)`;
+  requestAnimationFrame(animateBackground);
+}
+animateBackground();
+
+// ---------------- ミュージックプレイヤーなど ----------------
+fetch('config.json').then(r=>r.json()).then(cfg=>{
+  const glow = document.getElementById('glow');
+  glow.style.background=`rgb(${cfg.other.iconGlowColor})`;
+  document.body.style.color=`rgb(${cfg.other.fontColor})`;
+  document.getElementById('desc-text').innerText = cfg.other.description || '';
+  document.getElementById('version').innerText = cfg.other.version || 'v1.0';
+
+  // リンク生成
+  const linkBox = document.getElementById('links-box');
+  cfg.links.forEach(item=>{
+    let url = item.url || item;
+    let icon = item.icon || 'link.png';
+    const a = document.createElement('a');
+    a.href=url; a.target='_blank';
+    a.innerHTML=`<img src="${icon}">`;
+    linkBox.appendChild(a);
+  });
+
+  // 音楽
+  const audio=document.getElementById('audio');
+  const currentMusicText=document.getElementById('current-music');
+  const progressBar=document.getElementById('progress-bar');
+  const knob=document.getElementById('progress-knob');
+  const playPauseBtn=document.getElementById('play-pause');
+  const nextBtn=document.getElementById('next');
+  const prevBtn=document.getElementById('prev');
+  const currentTimeLabel=document.getElementById('current-time');
+  const totalTimeLabel=document.getElementById('total-time');
+  let list=cfg.musics, current=0;
+
+  function getSongName(f){ return f.replace(/\.mp3$/i,''); }
+  function updatePlayPause(){ playPauseBtn.querySelector('.btn-text').innerText=audio.paused?'▶':'⏸'; }
+
+  function playMusic(index){
+    current=index;
+    audio.src=list[current];
+    audio.play();
+    currentMusicText.innerHTML = getSongName(list[current]).replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
+    updatePlayPause();
+  }
+
+  if(list.length>0) playMusic(0);
+
+  function formatTime(sec){ const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
+  audio.addEventListener('loadedmetadata', ()=>{ totalTimeLabel.innerText=formatTime(audio.duration); });
+  audio.addEventListener('timeupdate', ()=>{
+    const percent=(audio.currentTime/audio.duration)*100;
+    progressBar.style.width=percent+'%';
+    knob.style.left=percent+'%';
+    currentTimeLabel.innerText=formatTime(audio.currentTime);
+  });
+
+  // 曲終了時に次の曲
+  audio.addEventListener('ended', ()=>{ playMusic((current+1)%list.length); });
+
+  // プログレスバー操作
+  let dragging=false;
+  knob.addEventListener('mousedown',()=>dragging=true);
+  document.addEventListener('mouseup',()=>dragging=false);
+  document.addEventListener('mousemove', e=>{
+    if(dragging){
+      const rect=document.getElementById('progress-container').getBoundingClientRect();
+      let percent=(e.clientX-rect.left)/rect.width;
+      percent=Math.max(0,Math.min(1,percent));
+      audio.currentTime=percent*audio.duration;
+    }
+  });
+
+  // 再生・停止ボタン
+  playPauseBtn.addEventListener('click', ()=>{
+    if(audio.paused) audio.play(); else audio.pause();
+    updatePlayPause();
+  });
+  nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length); });
+  prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
+});
+</script>
+
+</body>
+</html>
