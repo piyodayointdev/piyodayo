@@ -6,23 +6,32 @@
 <title>Piyo Profile</title>
 
 <script>
+// =========================================================
+// キャッシュを無視するための共通関数とタイムスタンプ
+// =========================================================
+const TIMESTAMP = new Date().getTime(); 
+
+function getCacheBustedUrl(url) {
+    if (url.includes('?')) {
+        return `${url}&t=${TIMESTAMP}`;
+    }
+    return `${url}?t=${TIMESTAMP}`;
+}
+
 // 毎回開くたびに新しいフォントが使用されるように、キャッシュを無効化する処理
 (function() {
-    // 現在時刻をミリ秒で取得し、ユニークなクエリパラメータとして使用
-    const timestamp = new Date().getTime(); 
-    
     // @font-faceルールにキャッシュ無効化のためのクエリパラメータを追加
     const fontRules = `
         @font-face {
             font-family: 'Jfont';
-            src: url('Jfont.woff?v=${timestamp}') format('woff');
+            src: url('${getCacheBustedUrl('Jfont.woff')}') format('woff');
             font-weight: normal;
             font-style: normal;
-            font-display: swap; /* フォントの読み込み中に代替フォントを表示 */
+            font-display: swap; 
         }
         @font-face {
             font-family: 'Efont';
-            src: url('Efont.woff?v=${timestamp}') format('woff');
+            src: url('${getCacheBustedUrl('Efont.woff')}') format('woff');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
@@ -40,11 +49,9 @@
 /* ---------------- 基本スタイル ---------------- */
 *{margin:0;padding:0;box-sizing:border-box;}
 body,html{
-  width:100%;height:100%;overflow-x:hidden; /* 横スクロールを防ぐ */
-  /* カスタムフォントを適用 */
+  width:100%;height:100%;overflow-x:hidden; 
   font-family:'Jfont','Efont',sans-serif;
   font-size:16px;color:white;background:#000;
-  /* フォントを滑らかにする設定 */
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -63,13 +70,12 @@ body,html{
 .center-box{
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
   text-align:center; z-index:2;
-  transition: top 0.3s ease, transform 0.3s ease;
+  transition: top 0.3s ease, transform 0.3s ease; 
 }
 .icon{width:150px; height:150px; border-radius:50%; overflow:hidden; box-shadow:0 0 40px rgba(246,59,225,0.6);}
 .name{margin-top:20px; font-size:32px; text-shadow:0 0 5px pink;}
 .desc{margin-top:8px; font-size:28px; opacity:0.9; text-shadow:0 0 5px pink;}
 
-/* 英文字だけ大きくする */
 .english{
   font-family:'Efont',sans-serif; 
   font-size:1.1em;
@@ -96,21 +102,23 @@ body,html{
   text-shadow:0 0 8px rgba(255,255,255,0.7);
   animation: none;
   display: inline-block;
-}
-/* 曲名スクロールのアニメーション定義 */
-@keyframes marquee {
-    0% { transform: translateX(0); }
-    50% { transform: translateX(var(--scroll-offset)); }
-    100% { transform: translateX(0); }
+  transform-origin: left center; 
+  transform: scale(1); 
 }
 
 .controls{display:flex;justify-content:flex-end;gap:15px;margin-top:10px;}
-/* ボタン全体のスタイル */
 .control-button{width:35px;height:35px;border-radius:50%;border:none;background:rgba(255,255,255,0.3);
   backdrop-filter:blur(5px);cursor:pointer;box-shadow:0 0 10px rgba(0,0,0,0.5);
   display:flex;align-items:center;justify-content:center;transition: transform 0.1s;}
 
-/* 画像アイコンのスタイル */
+/* ✅ 修正: ボタンのアクティブ状態に押下感を追加 */
+.control-button:active {
+    transform: scale(0.95); /* 押している間、少し小さく */
+    filter: brightness(1.2); /* 押している間、少し明るく */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* シャドウを弱くする */
+}
+/* -------------------------------------------------------- */
+
 .control-icon {
     width: 60%; 
     height: 60%; 
@@ -128,14 +136,59 @@ body,html{
   to{text-shadow:0 0 15px #fff;}
 }
 
+/* ---------------- 音量調整バー ---------------- */
+.volume-box{
+    position:absolute; top:25px; right:30px; 
+    width:200px; 
+    height: 50px;
+    background:rgba(0,0,0,0.2); border-radius:10px; backdrop-filter:blur(10px);
+    padding:10px 15px; color:white; box-shadow:0 0 15px rgba(0,0,0,0.5);
+    z-index:2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: top 0.3s ease, right 0.3s ease, left 0.3s ease;
+}
+
+.volume-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.volume-container{
+    width:100%;height:6px;background:rgba(255,255,255,0.2);border-radius:3px;overflow:hidden;
+    margin-top:5px;cursor:pointer;position:relative;
+}
+.volume-bar{
+    width:100%;height:100%;background:rgba(255,255,255,0.7);border-radius:3px;
+}
+.volume-knob{
+    width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.9);
+    position:absolute;top:50%;transform:translate(-50%,-50%);cursor:pointer;
+    left: 100%; /* 初期位置 */
+}
+
 /* ---------------- 下部リンク / バージョン ---------------- */
-.links{position:absolute;bottom:20px;width:100%;text-align:center; z-index:2; transition: bottom 0.3s ease, left 0.3s ease, transform 0.3s ease;}
+.links{
+    position:absolute;bottom:20px;width:100%;text-align:center; z-index:2; 
+    transition: bottom 0.3s ease, left 0.3s ease, transform 0.3s ease; 
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: center;
+}
 .links img{width:40px;margin:0 10px;cursor:pointer;border-radius:50%;filter:drop-shadow(0 0 var(--link-shadow,5px) black);}
 #version{
-  position:absolute;bottom:20px;left:20px;color:white;
+  position:absolute;
+  top: calc(100% - 20px - 1.5em); 
+  left:20px;
+  color:white;
   text-shadow:0 0 10px black, 0 0 5px black;
   font-size:18px; z-index:2;
-  transition: top 0.3s ease, bottom 0.3s ease;
+  transition: top 0.3s ease, left 0.3s ease; 
+  bottom: auto; 
 }
 
 /* ---------------- Enter Overlay ---------------- */
@@ -159,42 +212,35 @@ body,html{
 }
 
 /* ---------------- レスポンシブ メディアクエリ ---------------- */
-@media (max-width: 900px) {
-    /* 画面幅が900px以下になったらロゴを上に移動 */
+@media (max-width: 900px), (max-aspect-ratio: 1/1) {
     .center-box {
-        top: 25%; 
+        top: 25%; /* 縦長時は画面上部寄りに固定 */
         transform: translate(-50%, -25%);
     }
 
-    /* ミュージックプレイヤーの位置を中央に寄せる */
     .music-box {
         right: 50%; 
         transform: translateX(50%);
     }
     
-    /* リンクをミュージックプレイヤーの上に移動（高さ調整） */
     .links {
-        bottom: 190px; /* プレイヤーの高さ(140px) + 余白(50px) */
         left: 50%;
         transform: translateX(-50%);
     }
     
-    /* バージョンを左上に移動 */
     #version {
-        bottom: auto; 
         top: 20px; 
         left: 20px;
+        bottom: auto;
     }
 }
 
 @media (max-width: 500px) {
-    /* 画面幅が500px以下になったらミュージックプレイヤーの幅を縮小 */
     .music-box {
         width: calc(100vw - 40px);
         max-width: 450px; 
     }
     
-    /* フォントサイズの調整（任意） */
     .name { font-size: 28px; }
     .desc { font-size: 24px; }
     .music-info { font-size: 18px; }
@@ -213,10 +259,21 @@ body,html{
 
 <div id="glow"></div>
 
-<div class="center-box">
-  <img src="icon.png" class="icon">
+<div class="volume-box" id="volume-box">
+  <div class="volume-info">
+    <span id="volume-label">VOLUME</span>
+    <span id="volume-percent">100%</span>
+  </div>
+  <div class="volume-container" id="volume-container">
+    <div class="volume-bar" id="volume-bar"></div>
+    <div class="volume-knob" id="volume-knob"></div>
+  </div>
+</div>
+
+<div class="center-box" id="center-box">
+  <img src="icon.png" class="icon" id="icon-img">
   <div class="name" id="name-text">ぴよだよ～＾＾</div>
-  <div class="desc" id="desc-text">description</div>
+  <div class="desc" id="desc-text">説明文がここに入ります</div>
 </div>
 
 <div class="music-box">
@@ -242,9 +299,26 @@ body,html{
 </div>
 
 <div class="links" id="links-box"></div>
-<div id="version">Error Version</div>
+<div id="version">v1.0</div>
+
 
 <script>
+// =========================================================
+// 静的アセットのキャッシュ無視設定
+// =========================================================
+document.getElementById('icon-img').src = getCacheBustedUrl('icon.png');
+document.getElementById('prev').querySelector('img').src = getCacheBustedUrl('prev.png');
+document.getElementById('play-pause-icon').src = getCacheBustedUrl('play.png');
+document.getElementById('next').querySelector('img').src = getCacheBustedUrl('next.png');
+
+const videoSource = document.querySelector('#background-video source');
+if (videoSource) {
+    videoSource.src = getCacheBustedUrl(videoSource.getAttribute('src'));
+    document.getElementById('background-video').load(); 
+}
+// =========================================================
+
+
 // ---------------- 背景パララックス ----------------
 const bg = document.getElementById('background-video');
 let mouseX=0, mouseY=0, currentX=0, currentY=0;
@@ -263,180 +337,343 @@ function animateBackground(){
 animateBackground();
 
 // ---------------- ミュージックプレイヤーなど ----------------
-const enterOverlay = document.getElementById('enter-overlay');
-const bgVideo = document.getElementById('background-video');
+const compactQuery = window.matchMedia('(max-width: 900px), (max-aspect-ratio: 1/1)');
 
-// Enter画面クリック時の処理
-function enterOverlayClick() {
-    // 画面遷移の処理をまず実行し、必ずページに入れるようにする
-    document.querySelector('.enter-text').style.transform = 'scale(0.5)';
-    enterOverlay.style.opacity = '0';
-    enterOverlay.style.visibility = 'hidden';
-    enterOverlay.removeEventListener('click', enterOverlayClick);
+
+fetch(getCacheBustedUrl('config.json')) 
+  .then(r => {
+    if (!r.ok) {
+        throw new Error(`HTTP error! status: ${r.status}`);
+    }
+    return r.json();
+  })
+  .then(cfg => {
+    const glow = document.getElementById('glow');
+    const bgVideo = document.getElementById('background-video');
+    const enterOverlay = document.getElementById('enter-overlay');
+    const audio=document.getElementById('audio');
+    const currentMusicText=document.getElementById('current-music');
+    const playPauseIcon = document.getElementById('play-pause-icon'); 
+    const linkBox = document.getElementById('links-box');
+    const musicBox = document.querySelector('.music-box'); 
+    const progressBar=document.getElementById('progress-bar');
+    const knob=document.getElementById('progress-knob');
+    const playPauseBtn=document.getElementById('play-pause');
+    const nextBtn=document.getElementById('next');
+    const prevBtn=document.getElementById('prev');
+    const currentTimeLabel=document.getElementById('current-time');
+    const totalTimeLabel=document.getElementById('total-time');
+    const centerBox = document.getElementById('center-box');
     
-    // 背景フィルタを適用
-    const blurValue = 5; 
-    bgVideo.style.filter = `blur(${blurValue}px)`;
-
-    // config.jsonの読み込みと音楽再生の開始を試行
-    fetchAndStartMusic();
-}
-
-// Enter画面にクリックイベントを登録
-enterOverlay.addEventListener('click', enterOverlayClick);
+    // 音量バー要素の取得
+    const volumeContainer = document.getElementById('volume-container');
+    const volumeBar = document.getElementById('volume-bar');
+    const volumeKnob = document.getElementById('volume-knob');
+    const volumePercent = document.getElementById('volume-percent');
 
 
-// fetchの処理を関数化し、クリック後に呼び出す
-function fetchAndStartMusic() {
-  fetch('config.json')
-    .then(r => {
-        // HTTPエラーコード(404など)の場合もここでエラーを投げる
-        if (!r.ok) {
-            throw new Error(`HTTP error! status: ${r.status}`);
-        }
-        return r.json();
-    })
-    .then(cfg => {
-      // config.jsonが読み込めた場合の処理
+    let list = cfg.musics || [], current = 0;
+    let hasPlayedOnce = false; 
 
-      const glow = document.getElementById('glow');
-      const audio=document.getElementById('audio');
-      const currentMusicText=document.getElementById('current-music');
-      const progressBar=document.getElementById('progress-bar');
-      const knob=document.getElementById('progress-knob');
-      const playPauseBtn=document.getElementById('play-pause');
-      const nextBtn=document.getElementById('next');
-      const prevBtn=document.getElementById('prev');
-      const currentTimeLabel=document.getElementById('current-time');
-      const totalTimeLabel=document.getElementById('total-time');
-      const playPauseIcon = document.getElementById('play-pause-icon'); 
-      const linkBox = document.getElementById('links-box');
+    // 設定からスタイルを適用
+    glow.style.background=`rgb(${cfg.other.iconGlowColor})`;
+    document.body.style.color=`rgb(${cfg.other.fontColor})`;
+    document.getElementById('desc-text').innerText = cfg.other.description || 'description'; 
+    document.getElementById('version').innerText = cfg.other.version || 'v1.0'; 
+
+    const blurValue = cfg.other.backgroundBlur || 5; 
+    const activeFilter = `blur(${blurValue}px)`;
+    bgVideo.style.filter = activeFilter;
+
+    // リンク生成
+    cfg.links.forEach(item=>{
+      let url = item.url || item;
+      let icon = item.icon || 'link.png';
+      const a = document.createElement('a');
+      a.href=url; a.target='_blank';
       
-      let list = cfg.musics || [], current = 0;
-      let hasPlayedOnce = true; 
-
-      // 設定からスタイルを適用
-      glow.style.background=`rgb(${cfg.other.iconGlowColor})`;
-      document.body.style.color=`rgb(${cfg.other.fontColor})`;
-      document.getElementById('desc-text').innerText = cfg.other.description || 'description'; 
-      document.getElementById('version').innerText = cfg.other.version || 'Error Version'; 
-
-      // 背景ブラーをconfigの値に更新
-      const blurValue = cfg.other.backgroundBlur || 5; 
-      bgVideo.style.filter = `blur(${blurValue}px)`;
-
-      // リンク生成
-      cfg.links.forEach(item=>{
-        let url = item.url || item;
-        let icon = item.icon || 'link.png';
-        const a = document.createElement('a');
-        a.href=url; a.target='_blank';
-        a.innerHTML=`<img src="${icon}">`;
-        if(item.shadow) {
-            a.querySelector('img').style.setProperty('--link-shadow', `${item.shadow}px`);
-        }
-        linkBox.appendChild(a);
-      });
-
-      function getSongName(f){ return f.replace(/\.mp3$/i,''); }
+      a.innerHTML=`<img src="${getCacheBustedUrl(icon)}">`;
       
-      function updatePlayPause(){ 
-        if (!playPauseIcon) return;
-        playPauseIcon.src = audio.paused ? 'play.png' : 'pause.png'; 
-        playPauseIcon.alt = audio.paused ? 'Play' : 'Pause'; 
+      if(item.shadow) {
+          a.querySelector('img').style.setProperty('--link-shadow', `${item.shadow}px`);
       }
-
-      function playMusic(index){
-        current=index;
-        
-        // 音楽ファイルのパスが有効か確認
-        if (!list[current]) {
-            currentMusicText.innerHTML = '---';
-            currentMusicText.style.animation = 'none';
-            currentMusicText.style.transform = 'none';
-            return;
-        }
-
-        audio.src=list[current];
-        audio.load(); 
-        
-        // 曲名設定
-        const songName = getSongName(list[current]);
-        currentMusicText.innerHTML = songName.replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
-        updatePlayPause();
-
-        if(hasPlayedOnce) {
-            // メタデータロード完了後に再生を試みる
-            audio.addEventListener('loadedmetadata', function startPlayOnce() {
-                audio.removeEventListener('loadedmetadata', startPlayOnce); 
-                
-                audio.play().catch(e => {
-                    console.error("Audio play blocked/failed:", e);
-                });
-            });
-        }
-        
-        // 曲名が長い場合のマーキー処理
-        setTimeout(() => {
-            const container = document.querySelector('.music-title-container');
-            const containerWidth = container ? container.offsetWidth : 0;
-            const textWidth = currentMusicText.offsetWidth;
-
-            if (textWidth > containerWidth && containerWidth > 0) {
-                const scrollDistance = containerWidth - textWidth - 5; 
-                
-                currentMusicText.style.setProperty('--scroll-offset', `${scrollDistance}px`);
-                currentMusicText.style.animation = 'marquee 8s linear infinite alternate'; 
-            } else {
-                currentMusicText.style.animation = 'none';
-                currentMusicText.style.transform = 'none';
-            }
-        }, 0); 
-      }
-      
-      // 音楽再生を開始
-      if (list.length > 0) {
-        playMusic(0);
-      }
-
-      function formatTime(sec){ const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
-      audio.addEventListener('loadedmetadata', ()=>{ totalTimeLabel.innerText=formatTime(audio.duration); });
-      audio.addEventListener('timeupdate', ()=>{
-        const percent=(audio.currentTime/audio.duration)*100;
-        progressBar.style.width=percent+'%';
-        knob.style.left=percent+'%';
-        currentTimeLabel.innerText=formatTime(audio.currentTime);
-      });
-
-      // 曲終了時に次の曲
-      audio.addEventListener('ended', ()=>{ playMusic((current+1)%list.length); });
-
-      // プログレスバー操作
-      let dragging=false;
-      knob.addEventListener('mousedown',()=>dragging=true);
-      document.addEventListener('mouseup',()=>dragging=false);
-      document.addEventListener('mousemove', e=>{
-        if(dragging){
-          const rect=document.getElementById('progress-container').getBoundingClientRect();
-          let percent=(e.clientX-rect.left)/rect.width;
-          percent=Math.max(0,Math.min(1,percent));
-          audio.currentTime=percent*audio.duration;
-        }
-      });
-
-      // 再生・停止ボタン
-      playPauseBtn.addEventListener('click', ()=>{
-        if(audio.paused) audio.play(); else audio.pause();
-        updatePlayPause();
-      });
-      nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length); });
-      prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
-    })
-    .catch(error => {
-      // config.jsonの読み込みに失敗した場合
-      console.error("Failed to load config.json. Music player and settings will not function.", error);
+      linkBox.appendChild(a);
     });
-}
+    
+    // =========================================================
+    // リンクとミュージックプレイヤーの重なり防止ロジック
+    // =========================================================
+    
+    function calculateLinkHalfWidth() {
+        const linksCount = cfg.links ? cfg.links.length : 0;
+        const totalWidth = linksCount * 60; // リンク1個あたり 60px (40px + 20px)
+        return totalWidth / 2;
+    }
+    
+    function adjustPlayerPosition(linkHalfWidth) {
+        const PLAYER_MIN_WIDTH = 450;
+        const DEFAULT_RIGHT_MARGIN = 30;
+        const SAFE_MARGIN_HORIZONTAL = 50; 
+
+        const halfScreenWidth = window.innerWidth / 2;
+        const linkWidthFromCenter = linkHalfWidth;
+
+        const linkRightEdgeFromCenter = linkWidthFromCenter;
+        const playerLeftEdgeFromCenterDefault = halfScreenWidth - (PLAYER_MIN_WIDTH + DEFAULT_RIGHT_MARGIN);
+        
+        
+        if (linkRightEdgeFromCenter + SAFE_MARGIN_HORIZONTAL > playerLeftEdgeFromCenterDefault) {
+            musicBox.style.right = '50%';
+            musicBox.style.transform = 'translateX(50%)';
+            
+            return true; 
+        } else {
+            musicBox.style.right = `${DEFAULT_RIGHT_MARGIN}px`;
+            musicBox.style.transform = 'none';
+            
+            return false;
+        }
+    }
+
+
+    const SAFE_MARGIN_VERTICAL = 50; 
+
+    function adjustLinkPosition() {
+        
+        if (!compactQuery.matches) {
+            
+            const isOverlapping = adjustPlayerPosition(calculateLinkHalfWidth());
+            
+            if (isOverlapping) {
+                
+                // Wide screen, overlap: Move center box up via inline style
+                centerBox.style.top = '25%'; // ✅ 修正（復元）
+                centerBox.style.transform = 'translate(-50%, -25%)'; // ✅ 修正（復元）
+
+                if (!musicBox || !linkBox || !linkBox.hasChildNodes()) return;
+
+                const musicBoxRect = musicBox.getBoundingClientRect();
+                const musicBoxTop = musicBoxRect.top;
+                
+                const musicBoxTopFromBottom = window.innerHeight - musicBoxTop;
+                
+                const newBottom = musicBoxTopFromBottom + SAFE_MARGIN_VERTICAL;
+
+                linkBox.style.bottom = `${newBottom}px`;
+            } else {
+                
+                // Wide screen, no overlap: Center center box via inline style
+                centerBox.style.top = '50%';
+                centerBox.style.transform = 'translate(-50%, -50%)';
+                
+                linkBox.style.bottom = '20px'; 
+            }
+            
+        } else {
+            // Compact layout: Clear inline styles so CSS @media takes over
+            centerBox.style.top = ''; // ✅ 修正: インラインスタイルをクリア
+            centerBox.style.transform = ''; // ✅ 修正: インラインスタイルをクリア
+            
+            if (!musicBox || !linkBox || !linkBox.hasChildNodes()) return;
+
+            const musicBoxRect = musicBox.getBoundingClientRect();
+            const musicBoxTop = musicBoxRect.top;
+            
+            const musicBoxTopFromBottom = window.innerHeight - musicBoxTop;
+            
+            const newBottom = musicBoxTopFromBottom + SAFE_MARGIN_VERTICAL;
+
+            linkBox.style.bottom = `${newBottom}px`;
+        }
+    }
+
+    compactQuery.addListener(adjustLinkPosition); 
+    window.addEventListener('resize', adjustLinkPosition); 
+    
+    setTimeout(adjustLinkPosition, 200); 
+    // =========================================================
+
+    // ---------------- 音量制御ロジック ----------------
+    
+    audio.volume = 1.0; 
+    
+    function updateVolumeDisplay() {
+        const percent = audio.volume * 100;
+        volumeBar.style.width = percent + '%';
+        volumeKnob.style.left = percent + '%';
+        volumePercent.innerText = Math.round(percent) + '%';
+    }
+
+    let volumeDragging = false;
+    volumeKnob.addEventListener('mousedown', (e) => {
+        e.preventDefault(); 
+        volumeDragging = true;
+    });
+    
+    // プログレスバークリック操作
+    volumeContainer.addEventListener('click', e => {
+      if (volumeDragging) return; 
+      
+      const rect = volumeContainer.getBoundingClientRect();
+      let volume = (e.clientX - rect.left) / rect.width;
+      volume = Math.max(0, Math.min(1, volume)); 
+      audio.volume = volume;
+      updateVolumeDisplay();
+    });
+
+    // グローバルマウスイベント
+    document.addEventListener('mouseup', () => volumeDragging = false);
+    document.addEventListener('mousemove', e => {
+      if (volumeDragging) {
+        const rect = volumeContainer.getBoundingClientRect();
+        let volume = (e.clientX - rect.left) / rect.width;
+        volume = Math.max(0, Math.min(1, volume)); 
+        audio.volume = volume;
+        updateVolumeDisplay();
+      }
+    });
+
+    updateVolumeDisplay(); // 初期表示を設定
+    // --------------------------------------------------------
+
+
+    function getSongName(f){ return f.replace(/\.mp3$/i,''); }
+    
+    function updatePlayPause(){ 
+      if (!playPauseIcon) return;
+      
+      const shouldBePlaying = audio.paused; 
+      
+      playPauseIcon.src = shouldBePlaying ? getCacheBustedUrl('pause.png') : getCacheBustedUrl('play.png');
+      playPauseIcon.alt = shouldBePlaying ? 'Pause' : 'Play';
+    }
+
+    function playMusic(index){
+      current=index;
+      
+      if (!list[current]) {
+          currentMusicText.innerHTML = '---';
+          currentMusicText.style.animation = 'none';
+          currentMusicText.style.transform = 'none';
+          return;
+      }
+      
+      audio.src = getCacheBustedUrl(list[current]);
+      audio.load(); 
+      
+      const songName = getSongName(list[current]);
+      currentMusicText.innerHTML = songName.replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
+      
+      if(hasPlayedOnce) {
+          audio.addEventListener('loadedmetadata', function startPlayOnce() {
+              audio.removeEventListener('loadedmetadata', startPlayOnce); 
+              audio.play().catch(e => {
+                  console.error("Audio play blocked/failed:", e);
+              });
+              playPauseIcon.src = getCacheBustedUrl('pause.png');
+              playPauseIcon.alt = 'Pause';
+          });
+      } else {
+          playPauseIcon.src = getCacheBustedUrl('play.png');
+          playPauseIcon.alt = 'Play';
+      }
+      
+      // 曲名が長い場合のマーキー処理
+      setTimeout(() => {
+          const container = document.querySelector('.music-title-container');
+          const containerWidth = container ? container.offsetWidth : 0;
+          const textWidth = currentMusicText.offsetWidth;
+
+          if (textWidth > containerWidth && containerWidth > 0) {
+              const scrollDistance = containerWidth - textWidth - 5; 
+              
+              currentMusicText.style.setProperty('--scroll-offset', `${scrollDistance}px`);
+              currentMusicText.style.animation = 'marquee 8s linear infinite alternate'; 
+          } else {
+              currentMusicText.style.animation = 'none';
+              currentMusicText.style.transform = 'none';
+          }
+      }, 0); 
+    }
+    
+    // Enter画面クリック時の処理
+    function enterOverlayClick() {
+      if (list.length > 0) {
+          hasPlayedOnce = true;
+          playMusic(0); 
+      }
+      
+      bgVideo.style.filter = activeFilter;
+      document.querySelector('.enter-text').style.transform = 'scale(0.5)';
+      enterOverlay.style.opacity = '0';
+      enterOverlay.style.visibility = 'hidden';
+      enterOverlay.removeEventListener('click', enterOverlayClick);
+    }
+
+    // Enter画面にクリックイベントを登録
+    enterOverlay.addEventListener('click', enterOverlayClick);
+
+
+    function formatTime(sec){ const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
+    audio.addEventListener('loadedmetadata', ()=>{ totalTimeLabel.innerText=formatTime(audio.duration); });
+    audio.addEventListener('timeupdate', ()=>{
+      const percent=(audio.currentTime/audio.duration)*100;
+      progressBar.style.width=percent+'%';
+      knob.style.left=percent+'%';
+      currentTimeLabel.innerText=formatTime(audio.currentTime);
+    });
+
+    audio.addEventListener('ended', ()=>{ playMusic((current+1)%list.length); });
+
+    // プログレスバー操作
+    let dragging=false;
+    knob.addEventListener('mousedown',(e)=>{ 
+        e.preventDefault(); 
+        dragging=true;
+    });
+    document.addEventListener('mouseup',()=>dragging=false);
+    document.addEventListener('mousemove', e=>{
+      if(dragging){
+        const rect=document.getElementById('progress-container').getBoundingClientRect();
+        let percent=(e.clientX-rect.left)/rect.width;
+        percent=Math.max(0,Math.min(1,percent));
+        audio.currentTime=percent*audio.duration;
+      }
+    });
+
+    // 再生・停止ボタン
+    playPauseBtn.addEventListener('click', ()=>{
+      updatePlayPause(); 
+      if(audio.paused) {
+          audio.play().catch(e => {
+            console.error("Audio play blocked:", e);
+            playPauseIcon.src = getCacheBustedUrl('play.png'); 
+            playPauseIcon.alt = 'Play';
+          });
+      } else {
+          audio.pause();
+      }
+    });
+    
+    nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length); });
+    prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
+  })
+  .catch(error => {
+    console.error("Failed to load config.json. Music player and settings will not function. Check the file for JSON syntax errors.", error);
+    
+    const enterOverlay = document.getElementById('enter-overlay');
+    const bgVideo = document.getElementById('background-video');
+
+    function enterOverlayClickOnError() {
+        bgVideo.style.filter = `blur(5px)`;
+        document.querySelector('.enter-text').style.transform = 'scale(0.5)';
+        enterOverlay.style.opacity = '0';
+        enterOverlay.style.visibility = 'hidden';
+        enterOverlay.removeEventListener('click', enterOverlayClickOnError);
+    }
+
+    enterOverlay.addEventListener('click', enterOverlayClickOnError);
+  });
 </script>
 
 </body>
