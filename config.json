@@ -1,39 +1,22 @@
 {
   "other": {
-    "iconGlowColor": "000,000,000",
-    "fontColor": "255,255,255",
-    "backgroundBlur": 5,
+    "iconGlowColor": "0, 255, 255",         /* アイコン背後のglow色 */
+    "fontColor": "255, 255, 255",           /* 文字色 */
+    "backgroundBlur": 3,
     "description": "I like hoshino",
-    "version": "1.0.16 B"
+    "version": "Version 1.0.18 B"
   },
 
   "links": [
-    {"url":"https://x.com/piyodayo_intdev","icon":"x.png","shadow":5},
-    {"url":"https://discord.com/invite/FmVUkghnY2","icon":"discord.png","shadow":5},
-    {"url":"https://youtube.com/@p_i_y_o","icon":"youtube.png","shadow":5},
-    {"url":"https://guns.lol/piyodayo_intdev","icon":"guns.png","shadow":5}
+    { "url": "https://x.com/piyodayo_intdev", "icon": "x.png", "shadow": 5 },
+    { "url": "https://discord.com/invite/FmVUkghnY2", "icon": "discord.png", "shadow": 5 },
+    { "url": "https://youtube.com/@p_i_y_o", "icon": "youtube.png", "shadow": 5 },
+    { "url": "https://guns.lol/piyodayo_intdev", "icon": "guns.png", "shadow": 5 }
   ],
 
   "musics": [
     "Goal Wo Nerae!.mp3",
     "After School Dessert.mp3",
     "ありがとうそしてこれからも.mp3"
-  ],
-
-  "mousesetting": {
-    "backgroundSensitivity": 0.1,
-    "backgroundMaxSpeed": 4.0,
-    "backgroundSlowDistance": 270,
-    "backgroundMoveDistance": 20
-  },
-
-  "controls": {
-    "play": { "text": "▶", "size": 16, "offsetX": 1, "offsetY": 0 },
-    "pause": { "text": "⏸", "size": 24, "offsetX": 0, "offsetY": -3 },
-    "next": { "text": "⏭", "size": 20, "offsetX": 1, "offsetY": -2 },
-    "prev": { "text": "⏮", "size": 20, "offsetX": -1, "offsetY": -2 }
-  }
+  ]
 }
-
-
-
