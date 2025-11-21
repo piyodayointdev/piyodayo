@@ -4,7 +4,7 @@
     "fontColor": "255,255,255",
     "backgroundBlur": 5,
     "description": "I like hoshino",
-    "version": "1.0.15 B"
+    "version": "1.0.16 B"
   },
 
   "links": [
@@ -34,5 +34,6 @@
     "prev": { "text": "⏮", "size": 20, "offsetX": -1, "offsetY": -2 }
   }
 }
+
 
 
