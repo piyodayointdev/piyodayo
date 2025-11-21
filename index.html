@@ -40,7 +40,7 @@
 /* ---------------- 基本スタイル ---------------- */
 *{margin:0;padding:0;box-sizing:border-box;}
 body,html{
-  width:100%;height:100%;overflow-x:hidden; /* ★横スクロールを防ぐ */
+  width:100%;height:100%;overflow-x:hidden; /* 横スクロールを防ぐ */
   /* カスタムフォントを適用 */
   font-family:'Jfont','Efont',sans-serif;
   font-size:16px;color:white;background:#000;
@@ -64,7 +64,7 @@ body,html{
 .center-box{
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
   text-align:center; z-index:2;
-  /* ★レスポンシブ対応のため transition を追加 */
+  /* レスポンシブ対応のため transition を追加 */
   transition: top 0.3s ease, transform 0.3s ease;
 }
 .icon{width:150px; height:150px; border-radius:50%; overflow:hidden; box-shadow:0 0 40px rgba(246,59,225,0.6);}
@@ -84,23 +84,23 @@ body,html{
   background:rgba(0,0,0,0.2); border-radius:25px; backdrop-filter:blur(10px);
   padding:15px 20px; color:white; box-shadow:0 0 30px rgba(0,0,0,0.7);
   display:flex; flex-direction:column; justify-content:space-between; z-index:2;
-  /* ★レスポンシブ対応のため transition を追加 */
+  /* レスポンシブ対応のため transition を追加 */
   transition: width 0.3s ease, right 0.3s ease, transform 0.3s ease;
 }
 
-/* ★曲名スクロールのためのコンテナ */
+/* 曲名スクロールのためのコンテナ */
 .music-title-container {
     /* プレイヤーの幅からコントロールボタンの幅を引いた、表示エリアの最大幅 */
     max-width: calc(100% - 130px); 
-    overflow: hidden; /* ★はみ出た部分を隠す */
-    white-space: nowrap; /* ★テキストの折り返しを禁止 */
+    overflow: hidden; /* はみ出た部分を隠す */
+    white-space: nowrap; /* テキストの折り返しを禁止 */
 }
 .music-info{
   font-size:20px;
   text-align:left;
   text-shadow:0 0 8px rgba(255,255,255,0.7);
   animation: none;
-  display: inline-block; /* ★インラインブロックにすることで幅を正確に取得 */
+  display: inline-block; /* インラインブロックにすることで幅を正確に取得 */
 }
 /* 曲名スクロールのアニメーション定義 */
 @keyframes marquee {
@@ -174,6 +174,27 @@ body,html{
         right: 50%; 
         transform: translateX(50%);
     }
+    
+    /* リンクをミュージックプレイヤーの上に移動 */
+    .links {
+        position: absolute;
+        bottom: 190px; /* プレイヤーの高さ(140px) + 余白(50px) */
+        width: 100%;
+        text-align: center;
+        z-index: 2;
+        /* 右端固定から中央に移動 */
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    
+    /* バージョンを左上に移動 */
+    #version {
+        bottom: auto; /* 左下の指定を解除 */
+        top: 20px; /* 上から20pxに設定 */
+        left: 20px;
+        font-size: 18px;
+        z-index: 2;
+    }
 }
 
 @media (max-width: 500px) {
@@ -207,7 +228,7 @@ body,html{
 <div class="center-box">
   <img src="icon.png" class="icon">
   <div class="name" id="name-text">ぴよだよ～＾＾</div>
-  <div class="desc" id="desc-text">説明文がここに入ります</div>
+  <div class="desc" id="desc-text">description</div>
 </div>
 
 <div class="music-box">
@@ -233,7 +254,7 @@ body,html{
 </div>
 
 <div class="links" id="links-box"></div>
-<div id="version">v1.0</div>
+<div id="version">Error Version</div>
 
 <script>
 // ---------------- 背景パララックス ----------------
@@ -257,7 +278,7 @@ animateBackground();
 const enterOverlay = document.getElementById('enter-overlay');
 const bgVideo = document.getElementById('background-video');
 
-// Enter画面クリック時の処理 (fetchの外に移動し、確実にオーバーレイを非表示にする)
+// Enter画面クリック時の処理
 function enterOverlayClick() {
     // 画面遷移の処理をまず実行し、必ずページに入れるようにする
     document.querySelector('.enter-text').style.transform = 'scale(0.5)';
@@ -266,7 +287,7 @@ function enterOverlayClick() {
     enterOverlay.removeEventListener('click', enterOverlayClick);
     
     // 背景フィルタを適用
-    const blurValue = 5; // デフォルト値
+    const blurValue = 5; 
     bgVideo.style.filter = `blur(${blurValue}px)`;
 
     // config.jsonの読み込みと音楽再生の開始を試行
@@ -280,7 +301,13 @@ enterOverlay.addEventListener('click', enterOverlayClick);
 // fetchの処理を関数化し、クリック後に呼び出す
 function fetchAndStartMusic() {
   fetch('config.json')
-    .then(r => r.json())
+    .then(r => {
+        // HTTPエラーコード(404など)の場合もここでエラーを投げる
+        if (!r.ok) {
+            throw new Error(`HTTP error! status: ${r.status}`);
+        }
+        return r.json();
+    })
     .then(cfg => {
       // config.jsonが読み込めた場合の処理
 
@@ -298,13 +325,14 @@ function fetchAndStartMusic() {
       const linkBox = document.getElementById('links-box');
       
       let list = cfg.musics || [], current = 0;
-      let hasPlayedOnce = true; // クリックで入ったため常にtrue
+      let hasPlayedOnce = true; 
 
       // 設定からスタイルを適用
       glow.style.background=`rgb(${cfg.other.iconGlowColor})`;
       document.body.style.color=`rgb(${cfg.other.fontColor})`;
-      document.getElementById('desc-text').innerText = cfg.other.description || '';
-      document.getElementById('version').innerText = cfg.other.version || 'v1.0';
+      // descriptionとversionをconfigの値で更新
+      document.getElementById('desc-text').innerText = cfg.other.description || 'description'; 
+      document.getElementById('version').innerText = cfg.other.version || 'Error Version'; 
 
       // 背景ブラーをconfigの値に更新
       const blurValue = cfg.other.backgroundBlur || 5; 
@@ -361,22 +389,18 @@ function fetchAndStartMusic() {
             });
         }
         
-        // ★修正: 曲名が長い場合のマーキー処理
-        // DOMが更新された後に実行するためにsetTimeoutを使用
+        // 曲名が長い場合のマーキー処理
         setTimeout(() => {
             const container = document.querySelector('.music-title-container');
             const containerWidth = container ? container.offsetWidth : 0;
             const textWidth = currentMusicText.offsetWidth;
 
             if (textWidth > containerWidth && containerWidth > 0) {
-                // テキストがコンテナより長い場合、アニメーションを適用
-                // スクロール距離を計算 (端まで隠れないように少し余裕を持たせる)
                 const scrollDistance = containerWidth - textWidth - 5; 
                 
                 currentMusicText.style.setProperty('--scroll-offset', `${scrollDistance}px`);
-                currentMusicText.style.animation = 'marquee 8s linear infinite alternate'; // alternateで往復させる
+                currentMusicText.style.animation = 'marquee 8s linear infinite alternate'; 
             } else {
-                // テキストが短い場合はアニメーションを削除
                 currentMusicText.style.animation = 'none';
                 currentMusicText.style.transform = 'none';
             }
@@ -424,7 +448,7 @@ function fetchAndStartMusic() {
     .catch(error => {
       // config.jsonの読み込みに失敗した場合
       console.error("Failed to load config.json. Music player and settings will not function.", error);
-      // ここでエラーが発生しても、オーバーレイは既に消えているため、閲覧は可能です
+      // エラー時もHTMLの初期表示が維持されます。
     });
 }
 </script>
