@@ -4,56 +4,132 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Piyo Profile</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body,html{width:100%;height:100%;overflow:hidden;font-family:'Jfont','Efont',sans-serif;font-size:16px;color:white;background:#000;}
 
+<script>
+// 毎回開くたびに新しいフォントが使用されるように、キャッシュを無効化する処理
+(function() {
+    // 現在時刻をミリ秒で取得し、ユニークなクエリパラメータとして使用
+    const timestamp = new Date().getTime(); 
+    
+    // @font-faceルールにキャッシュ無効化のためのクエリパラメータを追加
+    const fontRules = `
+        @font-face {
+            font-family: 'Jfont';
+            src: url('Jfont.woff?v=${timestamp}') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap; /* フォントの読み込み中に代替フォントを表示 */
+        }
+        @font-face {
+            font-family: 'Efont';
+            src: url('Efont.woff?v=${timestamp}') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+    `;
+    
+    // スタイルタグを作成し、定義したルールを<head>に挿入
+    const style = document.createElement('style');
+    style.textContent = fontRules;
+    document.head.appendChild(style);
+})();
+</script>
+
+<style>
+/* ---------------- 基本スタイル ---------------- */
+*{margin:0;padding:0;box-sizing:border-box;}
+body,html{
+  width:100%;height:100%;overflow:hidden;
+  /* カスタムフォントを適用 */
+  font-family:'Jfont','Efont',sans-serif;
+  font-size:16px;color:white;background:#000;
+  /* フォントを滑らかにする設定 */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------------- 背景動画 ---------------- */
 #background-video{
   position:fixed; top:50%; left:50%;
   width:110%; height:110%;
   transform:translate3d(-50%,-50%,0) scale(1.1);
   object-fit:cover; z-index:0; will-change: transform;
+  /* 背景を暗くする設定を削除し、ブラーのみ残す */
+  filter: blur(5px); 
 }
+
+/* ---------------- 主要コンテンツ ---------------- */
 .center-box{
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
   text-align:center; z-index:2;
 }
-.icon{width:150px; height:150px; border-radius:50%; overflow:hidden; box-shadow:0 0 40px rgba(255,255,255,0.6);}
-.name{margin-top:20px; font-size:32px; text-shadow:0 0 10px white;}
-.desc{margin-top:8px; font-size:18px; opacity:0.9;}
+.icon{width:150px; height:150px; border-radius:50%; overflow:hidden; box-shadow:0 0 40px rgba(246,59,225,0.6);}
+.name{margin-top:20px; font-size:32px; text-shadow:0 0 5px pink;}
+.desc{margin-top:8px; font-size:28px; opacity:0.9; text-shadow:0 0 5px pink;}
 
 /* 英文字だけ大きくする */
-.english{font-family:'Efont',sans-serif; font-size:1.1em;}
+.english{
+  /* カスタムフォントを適用 */
+  font-family:'Efont',sans-serif; 
+  font-size:1.1em;
+}
 
-/* ミュージックプレイヤー */
+/* ---------------- ミュージックプレイヤー ---------------- */
 .music-box{
   position:absolute; bottom:30px; right:30px; width:450px; height:140px;
-  background:rgba(0,0,0,0.4); border-radius:25px; backdrop-filter:blur(10px);
-  padding:15px 20px; color:white; box-shadow:0 0 30px rgba(255,255,255,0.5);
+  background:rgba(0,0,0,0.2); border-radius:25px; backdrop-filter:blur(10px);
+  padding:15px 20px; color:white; box-shadow:0 0 30px rgba(0,0,0,0.7);
   display:flex; flex-direction:column; justify-content:space-between; z-index:2;
 }
-.music-info{font-size:18px;text-align:left;text-shadow:0 0 8px rgba(255,255,255,0.7);}
+.music-info{font-size:20px;text-align:left;text-shadow:0 0 8px rgba(255,255,255,0.7);}
 .controls{display:flex;justify-content:flex-end;gap:15px;margin-top:10px;}
 .control-button{width:35px;height:35px;border-radius:50%;border:none;background:rgba(255,255,255,0.3);
-  backdrop-filter:blur(5px);cursor:pointer;box-shadow:0 0 10px rgba(255,255,255,0.5);
+  backdrop-filter:blur(5px);cursor:pointer;box-shadow:0 0 10px rgba(0,0,0,0.5);
   display:flex;align-items:center;justify-content:center;font-family:'Efont','Jfont',sans-serif;transition: transform 0.1s;}
 .control-button span.btn-text{position:relative; display:inline-block;}
 .progress-container{width:100%;height:8px;background:rgba(255,255,255,0.2);border-radius:4px;overflow:hidden;margin-top:10px;cursor:pointer;position:relative;}
 .progress-bar{width:0%;height:100%;background:rgba(255,255,255,0.7);border-radius:4px;}
 .progress-knob{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.9);position:absolute;top:50%;transform:translate(-50%,-50%);cursor:pointer;}
-.time-labels{display:flex;justify-content:space-between;font-size:12px;margin-top:3px;text-shadow:0 0 5px rgba(255,255,255,0.7);}
+.time-labels{display:flex;justify-content:space-between;font-size:16px;margin-top:3px;text-shadow:0 0 5px rgba(255,255,255,0.7);}
 .time-labels span{animation: glow 1.5s infinite alternate;}
 @keyframes glow{
   from{text-shadow:0 0 5px #fff;}
   to{text-shadow:0 0 15px #fff;}
 }
 
-/* 下部リンク */
+/* ---------------- 下部リンク / バージョン ---------------- */
 .links{position:absolute;bottom:20px;width:100%;text-align:center; z-index:2;}
-.links img{width:40px;margin:0 10px;cursor:pointer;border-radius:50%;filter:drop-shadow(0 0 var(--link-shadow,5px) white);}
+.links img{width:40px;margin:0 10px;cursor:pointer;border-radius:50%;filter:drop-shadow(0 0 var(--link-shadow,5px) black);}
+#version{
+  position:absolute;bottom:20px;left:20px;color:white;
+  /* 黒いglowを適用 */
+  text-shadow:0 0 10px black, 0 0 5px black;
+  font-size:18px; z-index:2;
+}
 
-/* 左下バージョン */
-#version{position:absolute;bottom:20px;left:20px;color:white;text-shadow:0 0 5px black;font-size:14px; z-index:2;}
+/* ---------------- Enter Overlay ---------------- */
+#enter-overlay{
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.9); /* 暗さは維持 */
+  z-index:10;
+  display:flex; justify-content:center; align-items:center;
+  cursor:pointer;
+  opacity:1; 
+  /* 修正: transitionからtransformを削除 */
+  transition:opacity 0.5s ease, visibility 0.5s ease;
+  visibility:visible;
+}
+.enter-text{
+  font-size:48px; font-weight:bold;
+  color:white;
+  text-shadow:0 0 20px white;
+  animation: none; /* pulseアニメーションを削除 */
+  /* 追加: テキストの縮小アニメーションのためのtransitionを設定 */
+  transition: transform 0.5s ease;
+  transform: scale(1); /* 初期スケール */
+}
 </style>
 </head>
 <body>
@@ -61,6 +137,10 @@ body,html{width:100%;height:100%;overflow:hidden;font-family:'Jfont','Efont',san
 <video id="background-video" autoplay loop muted playsinline>
   <source src="background.mp4" type="video/mp4">
 </video>
+
+<div id="enter-overlay">
+  <div class="enter-text">Click to Enter!</div>
+</div>
 
 <div id="glow"></div>
 
@@ -72,7 +152,7 @@ body,html{width:100%;height:100%;overflow:hidden;font-family:'Jfont','Efont',san
 
 <div class="music-box">
   <div style="display:flex; justify-content:space-between; align-items:center;">
-    <div class="music-info" id="current-music">曲名</div>
+    <div class="music-info" id="current-music">---</div>
     <div class="controls">
       <button class="control-button" id="prev"><span class="btn-text">⏮</span></button>
       <button class="control-button" id="play-pause"><span class="btn-text">▶</span></button>
@@ -114,10 +194,22 @@ animateBackground();
 // ---------------- ミュージックプレイヤーなど ----------------
 fetch('config.json').then(r=>r.json()).then(cfg=>{
   const glow = document.getElementById('glow');
+  const bgVideo = document.getElementById('background-video');
+  const enterOverlay = document.getElementById('enter-overlay');
+
+  // 設定からスタイルを適用
   glow.style.background=`rgb(${cfg.other.iconGlowColor})`;
   document.body.style.color=`rgb(${cfg.other.fontColor})`;
   document.getElementById('desc-text').innerText = cfg.other.description || '';
   document.getElementById('version').innerText = cfg.other.version || 'v1.0';
+
+  // 背景にブラーを設定 (暗さ設定を削除)
+  const blurValue = cfg.other.backgroundBlur || 5; 
+  const activeFilter = `blur(${blurValue}px)`;
+  
+  // Enter前のCSSで初期ブラーを設定済みだが、念のためここでも設定
+  bgVideo.style.filter = activeFilter;
+
 
   // リンク生成
   const linkBox = document.getElementById('links-box');
@@ -127,6 +219,9 @@ fetch('config.json').then(r=>r.json()).then(cfg=>{
     const a = document.createElement('a');
     a.href=url; a.target='_blank';
     a.innerHTML=`<img src="${icon}">`;
+    if(item.shadow) {
+        a.querySelector('img').style.setProperty('--link-shadow', `${item.shadow}px`);
+    }
     linkBox.appendChild(a);
   });
 
@@ -141,6 +236,7 @@ fetch('config.json').then(r=>r.json()).then(cfg=>{
   const currentTimeLabel=document.getElementById('current-time');
   const totalTimeLabel=document.getElementById('total-time');
   let list=cfg.musics, current=0;
+  let hasPlayedOnce = false; 
 
   function getSongName(f){ return f.replace(/\.mp3$/i,''); }
   function updatePlayPause(){ playPauseBtn.querySelector('.btn-text').innerText=audio.paused?'▶':'⏸'; }
@@ -148,12 +244,39 @@ fetch('config.json').then(r=>r.json()).then(cfg=>{
   function playMusic(index){
     current=index;
     audio.src=list[current];
-    audio.play();
-    currentMusicText.innerHTML = getSongName(list[current]).replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
+    if(hasPlayedOnce) {
+        audio.play().catch(e => console.error("Audio play failed:", e));
+    }
+    // 曲名設定
+    if (list[current]) {
+        currentMusicText.innerHTML = getSongName(list[current]).replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
+    } else {
+        currentMusicText.innerHTML = '---';
+    }
     updatePlayPause();
   }
+  
+  // Enter画面クリック時の処理
+  function enterOverlayClick() {
+    if (list.length > 0) {
+        hasPlayedOnce = true;
+        playMusic(0);
+    }
+    // Enter解除後の背景フィルタを適用（暗さなし、ブラーのみ）
+    bgVideo.style.filter = activeFilter;
+    
+    // 修正: テキストのみを縮小
+    document.querySelector('.enter-text').style.transform = 'scale(0.5)';
+    
+    // オーバーレイ全体（黒い背景）はフェードアウト
+    enterOverlay.style.opacity = '0';
+    enterOverlay.style.visibility = 'hidden';
+    enterOverlay.removeEventListener('click', enterOverlayClick);
+  }
 
-  if(list.length>0) playMusic(0);
+  // Enter画面にクリックイベントを登録
+  enterOverlay.addEventListener('click', enterOverlayClick);
+
 
   function formatTime(sec){ const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
   audio.addEventListener('loadedmetadata', ()=>{ totalTimeLabel.innerText=formatTime(audio.duration); });
@@ -167,7 +290,7 @@ fetch('config.json').then(r=>r.json()).then(cfg=>{
   // 曲終了時に次の曲
   audio.addEventListener('ended', ()=>{ playMusic((current+1)%list.length); });
 
-  // プログレスバー操作
+  // プログレスバー操作 (省略なし)
   let dragging=false;
   knob.addEventListener('mousedown',()=>dragging=true);
   document.addEventListener('mouseup',()=>dragging=false);
@@ -180,7 +303,7 @@ fetch('config.json').then(r=>r.json()).then(cfg=>{
     }
   });
 
-  // 再生・停止ボタン
+  // 再生・停止ボタン (省略なし)
   playPauseBtn.addEventListener('click', ()=>{
     if(audio.paused) audio.play(); else audio.pause();
     updatePlayPause();
