@@ -187,7 +187,6 @@ body,html{
   color:white;
   text-shadow:0 0 10px black, 0 0 5px black;
   font-size:18px; z-index:2;
-  transition: top 0.3s ease, left 0.3s ease; 
   bottom: auto; 
 }
 
@@ -197,10 +196,10 @@ body,html{
   background:rgba(0,0,0,0.9); 
   z-index:10;
   display:flex; justify-content:center; align-items:center;
-  cursor:pointer;
-  opacity:1; 
-  transition:opacity 0.5s ease, visibility 0.5s ease;
-  visibility:visible;
+  cursor:pointer; 
+  opacity:0; 
+  transition:opacity 0.5s ease, visibility 0.5s ease; 
+  visibility:hidden; 
 }
 .enter-text{
   font-size:48px; font-weight:bold;
@@ -211,10 +210,42 @@ body,html{
   transform: scale(1); 
 }
 
+/* ---------------- Loading Overlay ---------------- */ 
+#loading-overlay{
+  position:fixed; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,1); 
+  z-index:20; 
+  display:flex; justify-content:center; align-items:center;
+  flex-direction: column;
+  color:white;
+  opacity:1; 
+  transition:opacity 0.5s ease; 
+  visibility:visible;
+}
+.loading-text{
+  font-size:32px; font-weight:bold;
+  margin-bottom: 20px;
+  text-shadow:0 0 10px white;
+}
+.progress-bar-container{
+  width: 80%;
+  max-width: 300px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.loading-progress-bar{
+  width: 0%;
+  height: 100%;
+  background: white; 
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
 /* ---------------- レスポンシブ メディアクエリ ---------------- */
 @media (max-width: 900px), (max-aspect-ratio: 1/1) {
     .center-box {
-        top: 25%; /* 縦長時は画面上部寄りに固定 */
+        top: 25%; 
         transform: translate(-50%, -25%);
     }
 
@@ -252,6 +283,14 @@ body,html{
 <video id="background-video" autoplay loop muted playsinline>
   <source src="background.mp4" type="video/mp4">
 </video>
+
+<div id="loading-overlay">
+  <div class="loading-text">LOADING...</div>
+  <div id="loading-percent" style="font-size:24px; margin-bottom:10px; color:white; text-shadow:0 0 5px white;">0%</div>
+  <div class="progress-bar-container">
+    <div id="loading-progress-bar" class="loading-progress-bar"></div>
+  </div>
+</div>
 
 <div id="enter-overlay">
   <div class="enter-text">Click to Enter!</div>
@@ -307,9 +346,7 @@ body,html{
 // 静的アセットのキャッシュ無視設定
 // =========================================================
 document.getElementById('icon-img').src = getCacheBustedUrl('icon.png');
-document.getElementById('prev').querySelector('img').src = getCacheBustedUrl('prev.png');
-document.getElementById('play-pause-icon').src = getCacheBustedUrl('play.png');
-document.getElementById('next').querySelector('img').src = getCacheBustedUrl('next.png');
+// NOTE: ボタンアイコンのsrc設定はinitializeApp内でDOMが揃った後に実行します。
 
 const videoSource = document.querySelector('#background-video source');
 if (videoSource) {
@@ -334,20 +371,77 @@ function animateBackground(){
   bg.style.transform=`translate3d(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px),0) scale(1.1)`;
   requestAnimationFrame(animateBackground);
 }
-animateBackground();
+// animateBackgroundは、アプリがロードされた後、またはDOMContentLoaded後に開始します。
 
-// ---------------- ミュージックプレイヤーなど ----------------
-const compactQuery = window.matchMedia('(max-width: 900px), (max-aspect-ratio: 1/1)');
+// ---------------- Enter画面とLoading画面の制御 ----------------
 
-
-fetch(getCacheBustedUrl('config.json')) 
-  .then(r => {
-    if (!r.ok) {
-        throw new Error(`HTTP error! status: ${r.status}`);
+/**
+ * Click to Enter! をクリックした時のアニメーション処理 (音楽再生機能を追加)
+ */
+function enterOverlayClick() {
+    const enterOverlay = document.getElementById('enter-overlay');
+    const audio = document.getElementById('audio');
+    const playPauseIcon = document.getElementById('play-pause-icon'); 
+    
+    // イベントリスナーを即座に解除し、連続クリックを防止
+    enterOverlay.removeEventListener('click', enterOverlayClick);
+    
+    // 1. 音楽再生を試みる (ユーザー操作として実行)
+    if (audio.paused) {
+        audio.play().then(() => {
+            // 再生に成功した場合、アイコンを'pause'に更新
+            playPauseIcon.src = getCacheBustedUrl('pause.png');
+            playPauseIcon.alt = 'Pause';
+        }).catch(e => {
+            console.error("Audio play blocked on Click to Enter:", e);
+            // 再生ブロック時: アイコンはそのまま'play' (停止状態)
+        });
     }
-    return r.json();
-  })
-  .then(cfg => {
+    
+    // 2. 画面のフェードアウトアニメーション
+    // Enterテキストを縮小アニメーション
+    document.querySelector('.enter-text').style.transform = 'scale(0.5)';
+    
+    // Enterオーバーレイをフェードアウト
+    enterOverlay.style.opacity = '0';
+    
+    // アニメーション完了後にDOMから隠す
+    setTimeout(() => {
+        enterOverlay.style.visibility = 'hidden';
+    }, 500); // CSSのトランジション時間と合わせる
+}
+
+function showEnterScreen() {
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const enterOverlay = document.getElementById('enter-overlay');
+    
+    // ロード画面をフェードアウト
+    loadingOverlay.style.opacity = '0';
+    
+    // Enter画面を表示
+    enterOverlay.style.opacity = '1';
+    enterOverlay.style.visibility = 'visible';
+
+    // フェードアウト完了後にLoading画面をDOMから隠す (500ms)
+    setTimeout(() => {
+        loadingOverlay.style.visibility = 'hidden';
+        
+        // クリックイベントリスナーを登録して、クリック待ち状態に戻す
+        enterOverlay.addEventListener('click', enterOverlayClick);
+        
+    }, 500); // Loadingフェードアウト時間 500ms
+}
+
+
+/**
+ * メインアプリケーションの初期化
+ * @param {Object} cfg - config.jsonの内容
+ * @param {Function} onReady - 初期の曲のメタデータがロードされた後に実行されるコールバック
+ */
+function initializeApp(cfg, onReady) {
+    animateBackground();
+    
+    const compactQuery = window.matchMedia('(max-width: 900px), (max-aspect-ratio: 1/1)');
     const glow = document.getElementById('glow');
     const bgVideo = document.getElementById('background-video');
     const enterOverlay = document.getElementById('enter-overlay');
@@ -373,7 +467,12 @@ fetch(getCacheBustedUrl('config.json'))
 
 
     let list = cfg.musics || [], current = 0;
-    let hasPlayedOnce = false; 
+
+    // 静的アセットのキャッシュ無視設定 (DOMが揃った後に実行)
+    document.getElementById('prev').querySelector('img').src = getCacheBustedUrl('prev.png');
+    document.getElementById('play-pause-icon').src = getCacheBustedUrl('play.png');
+    document.getElementById('next').querySelector('img').src = getCacheBustedUrl('next.png');
+
 
     // 設定からスタイルを適用
     glow.style.background=`rgb(${cfg.other.iconGlowColor})`;
@@ -383,7 +482,7 @@ fetch(getCacheBustedUrl('config.json'))
 
     const blurValue = cfg.other.backgroundBlur || 5; 
     const activeFilter = `blur(${blurValue}px)`;
-    bgVideo.style.filter = activeFilter;
+    bgVideo.style.filter = activeFilter; 
 
     // リンク生成
     cfg.links.forEach(item=>{
@@ -447,8 +546,8 @@ fetch(getCacheBustedUrl('config.json'))
             if (isOverlapping) {
                 
                 // Wide screen, overlap: Move center box up via inline style
-                centerBox.style.top = '25%'; // ✅ 修正（復元）
-                centerBox.style.transform = 'translate(-50%, -25%)'; // ✅ 修正（復元）
+                centerBox.style.top = '25%'; 
+                centerBox.style.transform = 'translate(-50%, -25%)';
 
                 if (!musicBox || !linkBox || !linkBox.hasChildNodes()) return;
 
@@ -471,8 +570,8 @@ fetch(getCacheBustedUrl('config.json'))
             
         } else {
             // Compact layout: Clear inline styles so CSS @media takes over
-            centerBox.style.top = ''; // ✅ 修正: インラインスタイルをクリア
-            centerBox.style.transform = ''; // ✅ 修正: インラインスタイルをクリア
+            centerBox.style.top = ''; 
+            centerBox.style.transform = ''; 
             
             if (!musicBox || !linkBox || !linkBox.hasChildNodes()) return;
 
@@ -542,10 +641,8 @@ fetch(getCacheBustedUrl('config.json'))
     function updatePlayPause(){ 
       if (!playPauseIcon) return;
       
-      const shouldBePlaying = audio.paused; 
-      
-      playPauseIcon.src = shouldBePlaying ? getCacheBustedUrl('pause.png') : getCacheBustedUrl('play.png');
-      playPauseIcon.alt = shouldBePlaying ? 'Pause' : 'Play';
+      // NOTE: この関数は再生ボタンが押された時に呼び出され、audio.pausedの状態が逆になることが前提。
+      // enterOverlayClickで直接アイコンをpauseに更新するため、ここではそのまま。
     }
 
     function playMusic(index){
@@ -564,20 +661,10 @@ fetch(getCacheBustedUrl('config.json'))
       const songName = getSongName(list[current]);
       currentMusicText.innerHTML = songName.replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
       
-      if(hasPlayedOnce) {
-          audio.addEventListener('loadedmetadata', function startPlayOnce() {
-              audio.removeEventListener('loadedmetadata', startPlayOnce); 
-              audio.play().catch(e => {
-                  console.error("Audio play blocked/failed:", e);
-              });
-              playPauseIcon.src = getCacheBustedUrl('pause.png');
-              playPauseIcon.alt = 'Pause';
-          });
-      } else {
-          playPauseIcon.src = getCacheBustedUrl('play.png');
-          playPauseIcon.alt = 'Play';
-      }
-      
+      // 音楽は停止状態から始める
+      playPauseIcon.src = getCacheBustedUrl('play.png');
+      playPauseIcon.alt = 'Play';
+
       // 曲名が長い場合のマーキー処理
       setTimeout(() => {
           const container = document.querySelector('.music-title-container');
@@ -596,26 +683,12 @@ fetch(getCacheBustedUrl('config.json'))
       }, 0); 
     }
     
-    // Enter画面クリック時の処理
-    function enterOverlayClick() {
-      if (list.length > 0) {
-          hasPlayedOnce = true;
-          playMusic(0); 
-      }
-      
-      bgVideo.style.filter = activeFilter;
-      document.querySelector('.enter-text').style.transform = 'scale(0.5)';
-      enterOverlay.style.opacity = '0';
-      enterOverlay.style.visibility = 'hidden';
-      enterOverlay.removeEventListener('click', enterOverlayClick);
-    }
-
-    // Enter画面にクリックイベントを登録
-    enterOverlay.addEventListener('click', enterOverlayClick);
-
-
+    
     function formatTime(sec){ const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
+    
+    // 永続的なリスナー: メタデータがロードされるたびに合計時間を更新
     audio.addEventListener('loadedmetadata', ()=>{ totalTimeLabel.innerText=formatTime(audio.duration); });
+
     audio.addEventListener('timeupdate', ()=>{
       const percent=(audio.currentTime/audio.duration)*100;
       progressBar.style.width=percent+'%';
@@ -643,37 +716,143 @@ fetch(getCacheBustedUrl('config.json'))
 
     // 再生・停止ボタン
     playPauseBtn.addEventListener('click', ()=>{
-      updatePlayPause(); 
+      
       if(audio.paused) {
-          audio.play().catch(e => {
+          audio.play().then(() => {
+            // 再生成功時
+            playPauseIcon.src = getCacheBustedUrl('pause.png'); 
+            playPauseIcon.alt = 'Pause';
+          }).catch(e => {
+            // 再生ブロック時
             console.error("Audio play blocked:", e);
             playPauseIcon.src = getCacheBustedUrl('play.png'); 
             playPauseIcon.alt = 'Play';
           });
       } else {
           audio.pause();
+          playPauseIcon.src = getCacheBustedUrl('play.png'); 
+          playPauseIcon.alt = 'Play';
       }
     });
     
     nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length); });
     prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
-  })
-  .catch(error => {
-    console.error("Failed to load config.json. Music player and settings will not function. Check the file for JSON syntax errors.", error);
-    
-    const enterOverlay = document.getElementById('enter-overlay');
-    const bgVideo = document.getElementById('background-video');
 
-    function enterOverlayClickOnError() {
-        bgVideo.style.filter = `blur(5px)`;
-        document.querySelector('.enter-text').style.transform = 'scale(0.5)';
-        enterOverlay.style.opacity = '0';
-        enterOverlay.style.visibility = 'hidden';
-        enterOverlay.removeEventListener('click', enterOverlayClickOnError);
+    // 初期曲のロード (再生はしない)
+    if (list.length > 0) {
+        // メタデータがロードされたらonReadyを実行する一時的なリスナーを登録
+        audio.addEventListener('loadedmetadata', onReady, { once: true });
+        
+        playMusic(0); 
+    } else {
+        onReady(); // 音楽リストが空の場合はすぐにコールバックを実行
     }
+}
 
-    enterOverlay.addEventListener('click', enterOverlayClickOnError);
-  });
+
+// ---------------- アセットのプリロードと初期化の制御 ----------------
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loadingProgressBar = document.getElementById('loading-progress-bar');
+    const loadingPercentDisplay = document.getElementById('loading-percent'); // 💡 NEW: パーセンテージ表示要素を取得
+    
+    // 1. config.json のロードから開始
+    fetch(getCacheBustedUrl('config.json')) 
+      .then(r => {
+        if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+        return r.json();
+      })
+      .then(cfg => {
+        
+        // 2. プリロードするアセットリストの定義
+        const assetsToLoad = [
+            'icon.png', 'prev.png', 'play.png', 'next.png',
+        ];
+
+        // リンクアイコンを追加
+        if (cfg.links) {
+            cfg.links.forEach(item => {
+                if (item.icon) assetsToLoad.push(item.icon);
+            });
+        }
+        // 最初の音楽ファイルを追加 (全曲ロードすると時間がかかりすぎるため)
+        if (cfg.musics && cfg.musics.length > 0) {
+            assetsToLoad.push(cfg.musics[0]); 
+        }
+        
+        const totalAssets = assetsToLoad.length;
+        let loadedCount = 0;
+        
+        // アセットのロード関数
+        const loadAsset = (assetPath) => {
+            return new Promise((resolve, reject) => {
+                const cacheBustedUrl = getCacheBustedUrl(assetPath);
+                
+                // 画像ファイルのロード
+                if (assetPath.match(/\.(png|jpg|jpeg|gif)$/i)) {
+                    const img = new Image();
+                    img.onload = resolve;
+                    img.onerror = resolve; // ロード失敗しても進行を止めない
+                    img.src = cacheBustedUrl;
+                } 
+                // 音声ファイルのロード
+                else if (assetPath.match(/\.(mp3|wav|ogg)$/i)) {
+                    const audioPreload = new Audio();
+                    audioPreload.addEventListener('canplaythrough', resolve, {once: true});
+                    audioPreload.addEventListener('error', resolve, {once: true});
+                    audioPreload.src = cacheBustedUrl;
+                    audioPreload.load();
+                } 
+                // その他のファイル（主にリンクアイコン以外の、念のためのもの）
+                else {
+                    fetch(cacheBustedUrl).then(resolve).catch(resolve);
+                }
+            }).finally(() => {
+                loadedCount++;
+                const progress = (loadedCount / totalAssets) * 100;
+                loadingProgressBar.style.width = `${progress}%`;
+                
+                // 💡 NEW: パーセンテージ表示を更新
+                if (loadingPercentDisplay) {
+                    loadingPercentDisplay.innerText = `${Math.round(progress)}%`;
+                }
+            });
+        };
+        
+        // 3. ロードの開始
+        const assetPromises = assetsToLoad.map(loadAsset);
+
+        // 4. 全てのアセットのロード完了を待つ
+        Promise.all(assetPromises).then(() => {
+            // ゲージを100%に
+            loadingProgressBar.style.width = '100%';
+            if (loadingPercentDisplay) { 
+                loadingPercentDisplay.innerText = '100%'; // 確実に100%を表示
+            }
+            
+            // アプリケーションの初期化とEnter画面への遷移（フェードアニメーションあり）
+            setTimeout(() => { 
+                // initializeAppを呼び出し、初期曲のメタデータロードが完了してからshowEnterScreenを呼び出す
+                initializeApp(cfg, showEnterScreen); 
+            }, 100); 
+        });
+
+      })
+      .catch(error => {
+        // config.jsonのロード失敗時（致命的エラー）
+        console.error("Failed to load config.json. Initializing with empty settings.", error);
+        
+        // エラー時でもEnter画面へ遷移
+        const dummyConfig = { musics: [], links: [], other: { iconGlowColor: '255,255,255', fontColor: '255,255,255', description: 'エラー: 設定を読み込めませんでした', version: 'v1.0' } };
+        loadingProgressBar.style.width = '100%';
+        if (loadingPercentDisplay) { 
+            loadingPercentDisplay.innerText = '100%';
+        }
+        setTimeout(() => {
+             initializeApp(dummyConfig, showEnterScreen); // 音楽がないのですぐにshowEnterScreenが呼ばれる
+        }, 100);
+      });
+});
 </script>
 
 </body>
