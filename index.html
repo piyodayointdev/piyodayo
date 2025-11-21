@@ -56,7 +56,6 @@ body,html{
   width:110%; height:110%;
   transform:translate3d(-50%,-50%,0) scale(1.1);
   object-fit:cover; z-index:0; will-change: transform;
-  /* 背景を暗くする設定を削除し、ブラーのみ残す */
   filter: blur(5px); 
 }
 
@@ -64,7 +63,6 @@ body,html{
 .center-box{
   position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
   text-align:center; z-index:2;
-  /* レスポンシブ対応のため transition を追加 */
   transition: top 0.3s ease, transform 0.3s ease;
 }
 .icon{width:150px; height:150px; border-radius:50%; overflow:hidden; box-shadow:0 0 40px rgba(246,59,225,0.6);}
@@ -73,7 +71,6 @@ body,html{
 
 /* 英文字だけ大きくする */
 .english{
-  /* カスタムフォントを適用 */
   font-family:'Efont',sans-serif; 
   font-size:1.1em;
 }
@@ -84,23 +81,21 @@ body,html{
   background:rgba(0,0,0,0.2); border-radius:25px; backdrop-filter:blur(10px);
   padding:15px 20px; color:white; box-shadow:0 0 30px rgba(0,0,0,0.7);
   display:flex; flex-direction:column; justify-content:space-between; z-index:2;
-  /* レスポンシブ対応のため transition を追加 */
   transition: width 0.3s ease, right 0.3s ease, transform 0.3s ease;
 }
 
 /* 曲名スクロールのためのコンテナ */
 .music-title-container {
-    /* プレイヤーの幅からコントロールボタンの幅を引いた、表示エリアの最大幅 */
     max-width: calc(100% - 130px); 
-    overflow: hidden; /* はみ出た部分を隠す */
-    white-space: nowrap; /* テキストの折り返しを禁止 */
+    overflow: hidden; 
+    white-space: nowrap; 
 }
 .music-info{
   font-size:20px;
   text-align:left;
   text-shadow:0 0 8px rgba(255,255,255,0.7);
   animation: none;
-  display: inline-block; /* インラインブロックにすることで幅を正確に取得 */
+  display: inline-block;
 }
 /* 曲名スクロールのアニメーション定義 */
 @keyframes marquee {
@@ -110,11 +105,12 @@ body,html{
 }
 
 .controls{display:flex;justify-content:flex-end;gap:15px;margin-top:10px;}
+/* ボタン全体のスタイル */
 .control-button{width:35px;height:35px;border-radius:50%;border:none;background:rgba(255,255,255,0.3);
   backdrop-filter:blur(5px);cursor:pointer;box-shadow:0 0 10px rgba(0,0,0,0.5);
   display:flex;align-items:center;justify-content:center;transition: transform 0.1s;}
 
-/* ボタン内の画像スタイル */
+/* 画像アイコンのスタイル */
 .control-icon {
     width: 60%; 
     height: 60%; 
@@ -133,12 +129,13 @@ body,html{
 }
 
 /* ---------------- 下部リンク / バージョン ---------------- */
-.links{position:absolute;bottom:20px;width:100%;text-align:center; z-index:2;}
+.links{position:absolute;bottom:20px;width:100%;text-align:center; z-index:2; transition: bottom 0.3s ease, left 0.3s ease, transform 0.3s ease;}
 .links img{width:40px;margin:0 10px;cursor:pointer;border-radius:50%;filter:drop-shadow(0 0 var(--link-shadow,5px) black);}
 #version{
   position:absolute;bottom:20px;left:20px;color:white;
   text-shadow:0 0 10px black, 0 0 5px black;
   font-size:18px; z-index:2;
+  transition: top 0.3s ease, bottom 0.3s ease;
 }
 
 /* ---------------- Enter Overlay ---------------- */
@@ -175,34 +172,25 @@ body,html{
         transform: translateX(50%);
     }
     
-    /* リンクをミュージックプレイヤーの上に移動 */
+    /* リンクをミュージックプレイヤーの上に移動（高さ調整） */
     .links {
-        position: absolute;
         bottom: 190px; /* プレイヤーの高さ(140px) + 余白(50px) */
-        width: 100%;
-        text-align: center;
-        z-index: 2;
-        /* 右端固定から中央に移動 */
         left: 50%;
         transform: translateX(-50%);
     }
     
     /* バージョンを左上に移動 */
     #version {
-        bottom: auto; /* 左下の指定を解除 */
-        top: 20px; /* 上から20pxに設定 */
+        bottom: auto; 
+        top: 20px; 
         left: 20px;
-        font-size: 18px;
-        z-index: 2;
     }
 }
 
 @media (max-width: 500px) {
     /* 画面幅が500px以下になったらミュージックプレイヤーの幅を縮小 */
     .music-box {
-        /* 画面左右に20pxずつマージンを確保 */
         width: calc(100vw - 40px);
-        /* 最大幅は450pxを維持 */
         max-width: 450px; 
     }
     
@@ -286,7 +274,7 @@ function enterOverlayClick() {
     enterOverlay.style.visibility = 'hidden';
     enterOverlay.removeEventListener('click', enterOverlayClick);
     
-    // 背景フィルタを適用
+    // 背景フィルタを適用 (configが読み込めなくても初期のブラーを維持)
     const blurValue = 5; 
     bgVideo.style.filter = `blur(${blurValue}px)`;
 
@@ -302,7 +290,6 @@ enterOverlay.addEventListener('click', enterOverlayClick);
 function fetchAndStartMusic() {
   fetch('config.json')
     .then(r => {
-        // HTTPエラーコード(404など)の場合もここでエラーを投げる
         if (!r.ok) {
             throw new Error(`HTTP error! status: ${r.status}`);
         }
@@ -330,7 +317,6 @@ function fetchAndStartMusic() {
       // 設定からスタイルを適用
       glow.style.background=`rgb(${cfg.other.iconGlowColor})`;
       document.body.style.color=`rgb(${cfg.other.fontColor})`;
-      // descriptionとversionをconfigの値で更新
       document.getElementById('desc-text').innerText = cfg.other.description || 'description'; 
       document.getElementById('version').innerText = cfg.other.version || 'Error Version'; 
 
@@ -446,9 +432,7 @@ function fetchAndStartMusic() {
       prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
     })
     .catch(error => {
-      // config.jsonの読み込みに失敗した場合
       console.error("Failed to load config.json. Music player and settings will not function.", error);
-      // エラー時もHTMLの初期表示が維持されます。
     });
 }
 </script>
