@@ -274,7 +274,7 @@ function enterOverlayClick() {
     enterOverlay.style.visibility = 'hidden';
     enterOverlay.removeEventListener('click', enterOverlayClick);
     
-    // 背景フィルタを適用 (configが読み込めなくても初期のブラーを維持)
+    // 背景フィルタを適用
     const blurValue = 5; 
     bgVideo.style.filter = `blur(${blurValue}px)`;
 
@@ -290,6 +290,7 @@ enterOverlay.addEventListener('click', enterOverlayClick);
 function fetchAndStartMusic() {
   fetch('config.json')
     .then(r => {
+        // HTTPエラーコード(404など)の場合もここでエラーを投げる
         if (!r.ok) {
             throw new Error(`HTTP error! status: ${r.status}`);
         }
@@ -432,6 +433,7 @@ function fetchAndStartMusic() {
       prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
     })
     .catch(error => {
+      // config.jsonの読み込みに失敗した場合
       console.error("Failed to load config.json. Music player and settings will not function.", error);
     });
 }
