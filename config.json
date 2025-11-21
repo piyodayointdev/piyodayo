@@ -1,7 +1,7 @@
 {
   "other": {
-    "iconGlowColor": "0, 255, 255",         /* アイコン背後のglow色 */
-    "fontColor": "255, 255, 255",           /* 文字色 */
+    "iconGlowColor": "0, 255, 255",
+    "fontColor": "255, 255, 255",
     "backgroundBlur": 3,
     "description": "I like hoshino",
     "version": "Version 1.0.19 B"
@@ -20,4 +20,5 @@
     "ありがとうそしてこれからも.mp3"
   ]
 }
+
 
