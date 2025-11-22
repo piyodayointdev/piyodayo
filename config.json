@@ -4,7 +4,9 @@
     "fontColor": "255, 255, 255",
     "backgroundBlur": 3,
     "description": "I like hoshino",
-    "version": "Version 1.0.57 B"
+    "version": "Version 1.0.68 B",
+    "progressEasing": 0.01,
+    "volumeEasing": 0.05
   },
 
   "links": [
@@ -20,7 +22,3 @@
     "ありがとうそしてこれからも.mp3"
   ]
 }
-
-
-
-
