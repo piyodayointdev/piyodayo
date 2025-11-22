@@ -178,7 +178,7 @@ body,html{
     height: 40px;
 }
 
-/* ---------------- アニメーション無効化クラス ---------------- */
+/* ---------------- アニメーション無効化クラス (✅ 修正済み) ---------------- */
 /* bodyに.animation-disabledが追加された際のスタイル */
 .animation-disabled .center-box, 
 .animation-disabled .music-box, 
@@ -191,17 +191,16 @@ body,html{
 /* グローアニメーション、シャドウを無効化 */
 .animation-disabled .time-labels span {
     animation: none !important;
+    /* 静的なグローは維持 */
     text-shadow: 0 0 5px rgba(255,255,255,0.7) !important;
 }
 
 .animation-disabled .icon { 
-    /* iconのbox-shadowを通常の状態に戻す（グローを消すため）*/
-    box-shadow: 0 0 10px rgba(0,0,0,0.4) !important;
+    /* iconのbox-shadowを上書きするルールを削除 -> デフォルトのグローを維持 */
 }
 
 .animation-disabled .links img {
-    /* リンクアイコンのドロップシャドウを無効化 */
-    filter: none !important;
+    /* リンクアイコンのドロップシャドウを無効化するルールを削除 -> デフォルトのシャドウを維持 */
 }
 /* ------------------------------------------------------------ */
 
@@ -462,7 +461,7 @@ if (videoSource) {
 // =========================================================
 
 
-// ---------------- 背景パララックス (✅ 修正: 制御ロジックを削除) ----------------
+// ---------------- 背景パララックス (常にON) ----------------
 const bg = document.getElementById('background-video');
 let mouseX=0, mouseY=0, currentX=0, currentY=0;
 document.addEventListener('mousemove', e=>{
@@ -638,7 +637,7 @@ function initializeApp(cfg, onReady) {
     setTimeout(adjustLinkPosition, 200); 
     // =========================================================
     
-    // ---------------- ✅ 追従機能に必要な変数と設定 ----------------
+    // ---------------- 追従機能に必要な変数と設定 ----------------
     let dragging=false;
     let volumeDragging = false;
     
@@ -660,7 +659,7 @@ function initializeApp(cfg, onReady) {
                                  Math.max(0, Math.min(1, cfg.other.volumeEasing)) : 0.5;
     // --------------------------------------------------------
 
-    // ---------------- ✅ アニメーション切り替え関数 (修正) ----------------
+    // ---------------- アニメーション切り替え関数 ----------------
     function toggleAnimation() {
         isAnimationEnabled = !isAnimationEnabled;
         
@@ -668,12 +667,12 @@ function initializeApp(cfg, onReady) {
         ANIMATION_TOGGLE_ICON.src = getCacheBustedUrl(isAnimationEnabled ? 'on.png' : 'off.png');
         document.body.classList.toggle('animation-disabled', !isAnimationEnabled);
 
-        // 背景アニメーションの制御は行わない
+        // 背景アニメーションの制御は行わない（常時ON）
     }
     ANIMATION_TOGGLE_BTN.addEventListener('click', toggleAnimation);
     // ---------------------------------------------------------------------------------
 
-    // ---------------- 音量制御ロジック ----------------
+    // ---------------- 音量制御ロジック (省略) ----------------
     audio.volume = 1.0; 
     
     function updateVolumeDisplay() {
@@ -681,62 +680,50 @@ function initializeApp(cfg, onReady) {
         volumePercent.innerText = Math.round(percent) + '%';
     }
 
-    // マウス/タッチ移動時の目標位置設定ロジック (描画は animateKnobFollow に任せる)
     function handleVolumeMove(clientX) {
         if (!volumeDragging) return;
         
         const rect = volumeContainer.getBoundingClientRect();
         
-        // 1. マウス位置を目標位置 (Target) に設定 (0.0〜1.0)
         let target = (clientX - rect.left) / rect.width;
         volumeTargetPercent = Math.max(0, Math.min(1, target)); 
 
-        // 2. 追従ノブ位置を実際の音量として適用する
-        audio.volume = volumeCurrentPercent; // ノブの追従位置を実際の音量として適用する
+        audio.volume = volumeCurrentPercent; 
         
-        // ドラッグ中のパーセンテージ表示は目標位置(Target)で更新
         volumePercent.innerText = Math.round(volumeTargetPercent * 100) + '%'; 
     }
 
-    // マウスダウンとタッチスタートでドラッグ開始情報を保存
     volumeKnob.addEventListener('mousedown', (e) => {
         e.preventDefault(); 
         volumeDragging = true;
-        // 開始時に追従位置と目標位置を現在の音量にリセット
         volumeCurrentPercent = audio.volume;
         volumeTargetPercent = audio.volume;
     });
     volumeKnob.addEventListener('touchstart', (e) => {
         e.preventDefault(); 
         volumeDragging = true;
-        // 開始時に追従位置と目標位置を現在の音量にリセット
         volumeCurrentPercent = audio.volume;
         volumeTargetPercent = audio.volume;
     });
 
-    // タップ操作 (追従なしの絶対位置設定)
     volumeContainer.addEventListener('click', e => {
       if (volumeDragging) return; 
       const rect = volumeContainer.getBoundingClientRect();
       let volume = (e.clientX - rect.left) / rect.width;
       volume = Math.max(0, Math.min(1, volume)); 
       audio.volume = volume;
-      // クリック操作では即座にノブも移動させる
       volumeCurrentPercent = volume; 
       volumeTargetPercent = volume; 
-      updateVolumeDisplay(); // パーセンテージ表示を更新
+      updateVolumeDisplay(); 
     });
 
-    // グローバルイベント
     document.addEventListener('mouseup', () => {
         volumeDragging = false;
-        // ドラッグ終了時に音量パーセンテージを現在のオーディオ音量に更新し直す
         updateVolumeDisplay(); 
     });
     document.addEventListener('mousemove', e => handleVolumeMove(e.clientX));
     document.addEventListener('touchend', () => {
         volumeDragging = false;
-        // ドラッグ終了時に音量パーセンテージを現在のオーディオ音量に更新し直す
         updateVolumeDisplay();
     });
     document.addEventListener('touchmove', e => {
@@ -760,7 +747,6 @@ function initializeApp(cfg, onReady) {
           return;
       }
       
-      // 再生位置をリセットしてからオーディオソースを設定
       audio.currentTime = 0; 
 
       audio.src = getCacheBustedUrl(list[current]);
@@ -793,7 +779,6 @@ function initializeApp(cfg, onReady) {
       const percent=(audio.currentTime/audio.duration)*100;
       currentTimeLabel.innerText=formatTime(audio.currentTime);
       
-      // 非ドラッグ時は、オーディオの最新の位置を目標位置として設定する（ノブを追従させる）
       if (!dragging) {
         progressTargetPercent = percent / 100;
       }
@@ -801,53 +786,43 @@ function initializeApp(cfg, onReady) {
 
     audio.addEventListener('ended', ()=>{ playMusic((current+1)%list.length); });
 
-    // ---------------- プログレスバー操作 ----------------
+    // ---------------- プログレスバー操作 (省略) ----------------
     
-    // マウス/タッチ移動時の目標位置設定ロジック (描画は animateKnobFollow に任せる)
     function handleProgressMove(clientX) {
         if (!dragging || isNaN(audio.duration)) return;
         
         const rect = progressContainer.getBoundingClientRect();
         
-        // 1. マウス位置を目標位置 (Target) に設定 (0.0〜1.0)
         let target = (clientX - rect.left) / rect.width;
         progressTargetPercent = Math.max(0, Math.min(1, target)); 
         
-        // 2. 追従ノブ位置を実際の再生時間として適用する
-        // ドラッグ中は、ノブの追従位置に合わせてcurrentTimeを更新する
         audio.currentTime = progressCurrentPercent * audio.duration;
     }
     
-    // マウスダウンとタッチスタートでドラッグ開始情報を保存
     knob.addEventListener('mousedown',(e)=>{ 
         e.preventDefault(); 
         dragging=true;
-        // 開始時に追従位置と目標位置を現在の再生時間にリセット
         progressCurrentPercent = audio.currentTime / audio.duration;
         progressTargetPercent = progressCurrentPercent;
     });
     knob.addEventListener('touchstart',(e)=>{ 
         e.preventDefault(); 
         dragging=true;
-        // 開始時に追従位置と目標位置を現在の再生時間にリセット
         progressCurrentPercent = audio.currentTime / audio.duration;
         progressTargetPercent = progressCurrentPercent;
     });
     
-    // タップ操作 (追従なしの絶対位置設定)
     progressContainer.addEventListener('click', e => {
       if (dragging || isNaN(audio.duration)) return; 
       const rect = progressContainer.getBoundingClientRect();
       let percent = (e.clientX - rect.left) / rect.width;
       percent = Math.max(0, Math.min(1, percent));
       audio.currentTime = percent * audio.duration;
-      // クリック操作では即座にノブも移動させる
       progressCurrentPercent = percent;
       progressTargetPercent = percent;
     });
 
 
-    // グローバルイベント
     document.addEventListener('mouseup',()=>dragging=false);
     document.addEventListener('mousemove', e=>{
       handleProgressMove(e.clientX);
@@ -882,19 +857,17 @@ function initializeApp(cfg, onReady) {
     nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length); });
     prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
 
-    // ---------------- ✅ ノブ追従アニメーションループ ----------------
+    // ---------------- ノブ追従アニメーションループ ----------------
     function animateKnobFollow() {
-        // イージングファクターをアニメーション状態によって切り替え
+        // アニメーションOFF時はイージングファクターを 1.0（即時移動）に設定
         const progressEasing = isAnimationEnabled ? PROGRESS_EASING_FACTOR : 1.0;
         const volumeEasing = isAnimationEnabled ? VOLUME_EASING_FACTOR : 1.0;
         
         // プログレスノブの追従計算
         let progressDiff = progressTargetPercent - progressCurrentPercent;
         if (Math.abs(progressDiff) > 0.0001) {
-            // C = C + (T - C) * Factor
             progressCurrentPercent += progressDiff * progressEasing; 
         } else if (!dragging) {
-            // 差が微小でドラッグ中でない場合は、目標値に固定
             progressCurrentPercent = progressTargetPercent;
         }
         
@@ -905,10 +878,8 @@ function initializeApp(cfg, onReady) {
         // 音量ノブの追従計算
         let volumeDiff = volumeTargetPercent - volumeCurrentPercent;
         if (Math.abs(volumeDiff) > 0.0001) {
-            // C = C + (T - C) * Factor
             volumeCurrentPercent += volumeDiff * volumeEasing;
         } else if (!volumeDragging) {
-             // 差が微小でドラッグ中でない場合は、目標値に固定
             volumeCurrentPercent = volumeTargetPercent;
         }
         
