@@ -111,13 +111,11 @@ body,html{
   backdrop-filter:blur(5px);cursor:pointer;box-shadow:0 0 10px rgba(0,0,0,0.5);
   display:flex;align-items:center;justify-content:center;transition: transform 0.1s;}
 
-/* ✅ 修正: ボタンのアクティブ状態に押下感を追加 */
 .control-button:active {
-    transform: scale(0.95); /* 押している間、少し小さく */
-    filter: brightness(1.2); /* 押している間、少し明るく */
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* シャドウを弱くする */
+    transform: scale(0.95);
+    filter: brightness(1.2);
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
-/* -------------------------------------------------------- */
 
 .control-icon {
     width: 60%; 
@@ -126,9 +124,30 @@ body,html{
     filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
 }
 
-.progress-container{width:100%;height:8px;background:rgba(255,255,255,0.2);border-radius:4px;overflow:hidden;margin-top:10px;cursor:pointer;position:relative;}
-.progress-bar{width:0%;height:100%;background:rgba(255,255,255,0.7);border-radius:4px;}
-.progress-knob{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.9);position:absolute;top:50%;transform:translate(-50%,-50%);cursor:pointer;}
+/* ---------------- プログレスバー (ベースCSSを修正) ---------------- */
+.progress-container{
+    width:100%;
+    height:8px; /* デフォルトの高さ (見た目とデスクトップのヒットエリア) */
+    background:rgba(255,255,255,0.2);border-radius:4px;
+    overflow:hidden;
+    margin-top:10px;cursor:pointer;position:relative;
+}
+.progress-bar{
+    width:0%;
+    height:8px; /* ✅ 変更: height:100% から固定の高さに変更 */
+    background:rgba(255,255,255,0.7);
+    border-radius:4px;
+    /* ✅ 追加: 垂直方向の中央揃え (コンテナの高さが変わっても中央を維持) */
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+}
+.progress-knob{
+    width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.9);
+    position:absolute;top:50%;transform:translate(-50%,-50%);cursor:pointer;
+}
+
 .time-labels{display:flex;justify-content:space-between;font-size:16px;margin-top:3px;text-shadow:0 0 5px rgba(255,255,255,0.7);}
 .time-labels span{animation: glow 1.5s infinite alternate;}
 @keyframes glow{
@@ -158,17 +177,29 @@ body,html{
     opacity: 0.8;
 }
 
+/* ---------------- 音量バー (ベースCSSを修正) ---------------- */
 .volume-container{
-    width:100%;height:6px;background:rgba(255,255,255,0.2);border-radius:3px;overflow:hidden;
+    width:100%;
+    height:6px; /* デフォルトの高さ (見た目とデスクトップのヒットエリア) */
+    background:rgba(255,255,255,0.2);border-radius:3px;
+    overflow:hidden;
     margin-top:5px;cursor:pointer;position:relative;
 }
 .volume-bar{
-    width:100%;height:100%;background:rgba(255,255,255,0.7);border-radius:3px;
+    width:100%;
+    height:6px; /* ✅ 変更: height:100% から固定の高さに変更 */
+    background:rgba(255,255,255,0.7);
+    border-radius:3px;
+    /* ✅ 追加: 垂直方向の中央揃え (コンテナの高さが変わっても中央を維持) */
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
 }
 .volume-knob{
     width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.9);
     position:absolute;top:50%;transform:translate(-50%,-50%);cursor:pointer;
-    left: 100%; /* 初期位置 */
+    left: 100%;
 }
 
 /* ---------------- 下部リンク / バージョン ---------------- */
@@ -190,7 +221,7 @@ body,html{
   bottom: auto; 
 }
 
-/* ---------------- Enter Overlay ---------------- */
+/* ---------------- Overlay CSS (省略) ---------------- */
 #enter-overlay{
   position:fixed; top:0; left:0; width:100%; height:100%;
   background:rgba(0,0,0,0.9); 
@@ -209,8 +240,6 @@ body,html{
   transition: transform 0.5s ease;
   transform: scale(1); 
 }
-
-/* ---------------- Loading Overlay ---------------- */ 
 #loading-overlay{
   position:fixed; top:0; left:0; width:100%; height:100%;
   background:rgba(0,0,0,1); 
@@ -242,6 +271,7 @@ body,html{
   border-radius: 4px;
   transition: width 0.3s ease;
 }
+
 /* ---------------- レスポンシブ メディアクエリ ---------------- */
 @media (max-width: 900px), (max-aspect-ratio: 1/1) {
     .center-box {
@@ -276,6 +306,35 @@ body,html{
     .desc { font-size: 24px; }
     .music-info { font-size: 18px; }
 }
+
+/* ---------------- ✅ タッチデバイス向けヒットエリア拡張 ---------------- */
+/* pointer: coarse はタッチデバイス（指での操作）を検出するために使用 */
+@media (hover: none) and (pointer: coarse), (max-width: 900px) {
+    
+    /* ミュージックプレイヤーのプログレスバー: ヒットエリアを約2倍 (8px -> 16px) */
+    .music-box .progress-container {
+        height: 16px; 
+        overflow: visible; /* ノブがはみ出してもOK */
+    }
+    /* ノブのサイズを大きくし、操作性を向上 */
+    .progress-knob {
+        width: 20px;
+        height: 20px;
+    }
+    
+    /* 音量バーのコンテナ: ヒットエリアを約4倍 (6px -> 24px) */
+    .volume-box .volume-container {
+        height: 24px; 
+        overflow: visible;
+    }
+    /* ノブのサイズを大きくし、操作性を向上 */
+    .volume-knob {
+        width: 18px;
+        height: 18px;
+    }
+}
+/* ------------------------------------------------------------ */
+
 </style>
 </head>
 <body>
@@ -346,8 +405,6 @@ body,html{
 // 静的アセットのキャッシュ無視設定
 // =========================================================
 document.getElementById('icon-img').src = getCacheBustedUrl('icon.png');
-// NOTE: ボタンアイコンのsrc設定はinitializeApp内でDOMが揃った後に実行します。
-
 const videoSource = document.querySelector('#background-video source');
 if (videoSource) {
     videoSource.src = getCacheBustedUrl(videoSource.getAttribute('src'));
@@ -356,7 +413,7 @@ if (videoSource) {
 // =========================================================
 
 
-// ---------------- 背景パララックス ----------------
+// ---------------- 背景パララックス (省略) ----------------
 const bg = document.getElementById('background-video');
 let mouseX=0, mouseY=0, currentX=0, currentY=0;
 document.addEventListener('mousemove', e=>{
@@ -371,65 +428,42 @@ function animateBackground(){
   bg.style.transform=`translate3d(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px),0) scale(1.1)`;
   requestAnimationFrame(animateBackground);
 }
-// animateBackgroundは、アプリがロードされた後、またはDOMContentLoaded後に開始します。
 
-// ---------------- Enter画面とLoading画面の制御 ----------------
-
-/**
- * Click to Enter! をクリックした時のアニメーション処理 (音楽再生機能を追加)
- */
+// ---------------- Enter画面とLoading画面の制御 (省略) ----------------
 function enterOverlayClick() {
     const enterOverlay = document.getElementById('enter-overlay');
     const audio = document.getElementById('audio');
     const playPauseIcon = document.getElementById('play-pause-icon'); 
-    
-    // イベントリスナーを即座に解除し、連続クリックを防止
     enterOverlay.removeEventListener('click', enterOverlayClick);
     
-    // 1. 音楽再生を試みる (ユーザー操作として実行)
     if (audio.paused) {
         audio.play().then(() => {
-            // 再生に成功した場合、アイコンを'pause'に更新
             playPauseIcon.src = getCacheBustedUrl('pause.png');
             playPauseIcon.alt = 'Pause';
         }).catch(e => {
             console.error("Audio play blocked on Click to Enter:", e);
-            // 再生ブロック時: アイコンはそのまま'play' (停止状態)
         });
     }
     
-    // 2. 画面のフェードアウトアニメーション
-    // Enterテキストを縮小アニメーション
     document.querySelector('.enter-text').style.transform = 'scale(0.5)';
-    
-    // Enterオーバーレイをフェードアウト
     enterOverlay.style.opacity = '0';
     
-    // アニメーション完了後にDOMから隠す
     setTimeout(() => {
         enterOverlay.style.visibility = 'hidden';
-    }, 500); // CSSのトランジション時間と合わせる
+    }, 500);
 }
 
 function showEnterScreen() {
     const loadingOverlay = document.getElementById('loading-overlay');
     const enterOverlay = document.getElementById('enter-overlay');
-    
-    // ロード画面をフェードアウト
     loadingOverlay.style.opacity = '0';
-    
-    // Enter画面を表示
     enterOverlay.style.opacity = '1';
     enterOverlay.style.visibility = 'visible';
 
-    // フェードアウト完了後にLoading画面をDOMから隠す (500ms)
     setTimeout(() => {
         loadingOverlay.style.visibility = 'hidden';
-        
-        // クリックイベントリスナーを登録して、クリック待ち状態に戻す
         enterOverlay.addEventListener('click', enterOverlayClick);
-        
-    }, 500); // Loadingフェードアウト時間 500ms
+    }, 500);
 }
 
 
@@ -444,7 +478,6 @@ function initializeApp(cfg, onReady) {
     const compactQuery = window.matchMedia('(max-width: 900px), (max-aspect-ratio: 1/1)');
     const glow = document.getElementById('glow');
     const bgVideo = document.getElementById('background-video');
-    const enterOverlay = document.getElementById('enter-overlay');
     const audio=document.getElementById('audio');
     const currentMusicText=document.getElementById('current-music');
     const playPauseIcon = document.getElementById('play-pause-icon'); 
@@ -460,7 +493,6 @@ function initializeApp(cfg, onReady) {
     const totalTimeLabel=document.getElementById('total-time');
     const centerBox = document.getElementById('center-box');
     
-    // 音量バー要素の取得
     const volumeContainer = document.getElementById('volume-container');
     const volumeBar = document.getElementById('volume-bar');
     const volumeKnob = document.getElementById('volume-knob');
@@ -469,13 +501,11 @@ function initializeApp(cfg, onReady) {
 
     let list = cfg.musics || [], current = 0;
 
-    // 静的アセットのキャッシュ無視設定 (DOMが揃った後に実行)
     document.getElementById('prev').querySelector('img').src = getCacheBustedUrl('prev.png');
     document.getElementById('play-pause-icon').src = getCacheBustedUrl('play.png');
     document.getElementById('next').querySelector('img').src = getCacheBustedUrl('next.png');
 
 
-    // 設定からスタイルを適用
     glow.style.background=`rgb(${cfg.other.iconGlowColor})`;
     document.body.style.color=`rgb(${cfg.other.fontColor})`;
     document.getElementById('desc-text').innerText = cfg.other.description || 'description'; 
@@ -485,15 +515,12 @@ function initializeApp(cfg, onReady) {
     const activeFilter = `blur(${blurValue}px)`;
     bgVideo.style.filter = activeFilter; 
 
-    // リンク生成
     cfg.links.forEach(item=>{
       let url = item.url || item;
       let icon = item.icon || 'link.png';
       const a = document.createElement('a');
       a.href=url; a.target='_blank';
-      
       a.innerHTML=`<img src="${getCacheBustedUrl(icon)}">`;
-      
       if(item.shadow) {
           a.querySelector('img').style.setProperty('--link-shadow', `${item.shadow}px`);
       }
@@ -501,12 +528,11 @@ function initializeApp(cfg, onReady) {
     });
     
     // =========================================================
-    // リンクとミュージックプレイヤーの重なり防止ロジック
+    // リンクとミュージックプレイヤーの重なり防止ロジック (省略)
     // =========================================================
-    
     function calculateLinkHalfWidth() {
         const linksCount = cfg.links ? cfg.links.length : 0;
-        const totalWidth = linksCount * 60; // リンク1個あたり 60px (40px + 20px)
+        const totalWidth = linksCount * 60; 
         return totalWidth / 2;
     }
     
@@ -514,86 +540,56 @@ function initializeApp(cfg, onReady) {
         const PLAYER_MIN_WIDTH = 450;
         const DEFAULT_RIGHT_MARGIN = 30;
         const SAFE_MARGIN_HORIZONTAL = 50; 
-
         const halfScreenWidth = window.innerWidth / 2;
         const linkWidthFromCenter = linkHalfWidth;
-
         const linkRightEdgeFromCenter = linkWidthFromCenter;
         const playerLeftEdgeFromCenterDefault = halfScreenWidth - (PLAYER_MIN_WIDTH + DEFAULT_RIGHT_MARGIN);
-        
         
         if (linkRightEdgeFromCenter + SAFE_MARGIN_HORIZONTAL > playerLeftEdgeFromCenterDefault) {
             musicBox.style.right = '50%';
             musicBox.style.transform = 'translateX(50%)';
-            
             return true; 
         } else {
             musicBox.style.right = `${DEFAULT_RIGHT_MARGIN}px`;
             musicBox.style.transform = 'none';
-            
             return false;
         }
     }
-
-
     const SAFE_MARGIN_VERTICAL = 50; 
-
     function adjustLinkPosition() {
-        
         if (!compactQuery.matches) {
-            
             const isOverlapping = adjustPlayerPosition(calculateLinkHalfWidth());
-            
             if (isOverlapping) {
-                
-                // Wide screen, overlap: Move center box up via inline style
                 centerBox.style.top = '25%'; 
                 centerBox.style.transform = 'translate(-50%, -25%)';
-
                 if (!musicBox || !linkBox || !linkBox.hasChildNodes()) return;
-
                 const musicBoxRect = musicBox.getBoundingClientRect();
                 const musicBoxTop = musicBoxRect.top;
-                
                 const musicBoxTopFromBottom = window.innerHeight - musicBoxTop;
-                
                 const newBottom = musicBoxTopFromBottom + SAFE_MARGIN_VERTICAL;
-
                 linkBox.style.bottom = `${newBottom}px`;
             } else {
-                
-                // Wide screen, no overlap: Center center box via inline style
                 centerBox.style.top = '50%';
                 centerBox.style.transform = 'translate(-50%, -50%)';
-                
                 linkBox.style.bottom = '20px'; 
             }
-            
         } else {
-            // Compact layout: Clear inline styles so CSS @media takes over
             centerBox.style.top = ''; 
             centerBox.style.transform = ''; 
-            
             if (!musicBox || !linkBox || !linkBox.hasChildNodes()) return;
-
             const musicBoxRect = musicBox.getBoundingClientRect();
             const musicBoxTop = musicBoxRect.top;
-            
             const musicBoxTopFromBottom = window.innerHeight - musicBoxTop;
-            
             const newBottom = musicBoxTopFromBottom + SAFE_MARGIN_VERTICAL;
-
             linkBox.style.bottom = `${newBottom}px`;
         }
     }
-
     compactQuery.addListener(adjustLinkPosition); 
     window.addEventListener('resize', adjustLinkPosition); 
-    
     setTimeout(adjustLinkPosition, 200); 
     // =========================================================
 
-    // ---------------- 音量制御ロジック ----------------
+    // ---------------- 音量制御ロジック (タッチサポート済み) ----------------
     
     audio.volume = 1.0; 
     
@@ -606,7 +602,6 @@ function initializeApp(cfg, onReady) {
 
     let volumeDragging = false;
     
-    // マウス/タッチ共通の処理関数
     function handleVolumeMove(clientX) {
         if (volumeDragging) {
             const rect = volumeContainer.getBoundingClientRect();
@@ -617,22 +612,11 @@ function initializeApp(cfg, onReady) {
         }
     }
 
-    // マウスイベント
-    volumeKnob.addEventListener('mousedown', (e) => {
-        e.preventDefault(); 
-        volumeDragging = true;
-    });
-    
-    // ✅ TOUCH SUPPORT: 音量ノブのタッチスタート
-    volumeKnob.addEventListener('touchstart', (e) => {
-        e.preventDefault(); 
-        volumeDragging = true;
-    });
+    volumeKnob.addEventListener('mousedown', (e) => { e.preventDefault(); volumeDragging = true; });
+    volumeKnob.addEventListener('touchstart', (e) => { e.preventDefault(); volumeDragging = true; });
 
-    // プログレスバークリック操作
     volumeContainer.addEventListener('click', e => {
       if (volumeDragging) return; 
-      
       const rect = volumeContainer.getBoundingClientRect();
       let volume = (e.clientX - rect.left) / rect.width;
       volume = Math.max(0, Math.min(1, volume)); 
@@ -640,9 +624,7 @@ function initializeApp(cfg, onReady) {
       updateVolumeDisplay();
     });
 
-    // ✅ TOUCH SUPPORT: 音量バーのタップ操作
     volumeContainer.addEventListener('touchstart', e => {
-      // ドラッグではない単なるタップとして処理
       if (e.target !== volumeKnob) {
           const rect = volumeContainer.getBoundingClientRect();
           let volume = (e.touches[0].clientX - rect.left) / rect.width;
@@ -653,28 +635,17 @@ function initializeApp(cfg, onReady) {
     }, { passive: true });
 
 
-    // グローバルマウスイベント
     document.addEventListener('mouseup', () => volumeDragging = false);
     document.addEventListener('mousemove', e => handleVolumeMove(e.clientX));
     
-    // ✅ TOUCH SUPPORT: グローバルタッチイベント
     document.addEventListener('touchend', () => volumeDragging = false);
     document.addEventListener('touchmove', e => handleVolumeMove(e.touches[0].clientX), { passive: false });
 
-
-    updateVolumeDisplay(); // 初期表示を設定
+    updateVolumeDisplay(); 
     // --------------------------------------------------------
-
 
     function getSongName(f){ return f.replace(/\.mp3$/i,''); }
     
-    function updatePlayPause(){ 
-      if (!playPauseIcon) return;
-      
-      // NOTE: この関数は再生ボタンが押された時に呼び出され、audio.pausedの状態が逆になることが前提。
-      // enterOverlayClickで直接アイコンをpauseに更新するため、ここではそのまま。
-    }
-
     function playMusic(index){
       current=index;
       
@@ -691,11 +662,9 @@ function initializeApp(cfg, onReady) {
       const songName = getSongName(list[current]);
       currentMusicText.innerHTML = songName.replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
       
-      // 音楽は停止状態から始める
       playPauseIcon.src = getCacheBustedUrl('play.png');
       playPauseIcon.alt = 'Play';
 
-      // 曲名が長い場合のマーキー処理
       setTimeout(() => {
           const container = document.querySelector('.music-title-container');
           const containerWidth = container ? container.offsetWidth : 0;
@@ -703,7 +672,6 @@ function initializeApp(cfg, onReady) {
 
           if (textWidth > containerWidth && containerWidth > 0) {
               const scrollDistance = containerWidth - textWidth - 5; 
-              
               currentMusicText.style.setProperty('--scroll-offset', `${scrollDistance}px`);
               currentMusicText.style.animation = 'marquee 8s linear infinite alternate'; 
           } else {
@@ -716,7 +684,6 @@ function initializeApp(cfg, onReady) {
     
     function formatTime(sec){ const m=Math.floor(sec/60); const s=Math.floor(sec%60); return `${m}:${s<10?'0'+s:s}`; }
     
-    // 永続的なリスナー: メタデータがロードされるたびに合計時間を更新
     audio.addEventListener('loadedmetadata', ()=>{ totalTimeLabel.innerText=formatTime(audio.duration); });
 
     audio.addEventListener('timeupdate', ()=>{
@@ -728,70 +695,57 @@ function initializeApp(cfg, onReady) {
 
     audio.addEventListener('ended', ()=>{ playMusic((current+1)%list.length); });
 
-    // ---------------- プログレスバー操作 ----------------
+    // ---------------- プログレスバー操作 (タッチサポート済み) ----------------
     let dragging=false;
     
-    // マウス/タッチ共通の処理関数
     function handleProgressMove(clientX) {
-        const rect=progressContainer.getBoundingClientRect(); // progressContainerを使用
+        const rect=progressContainer.getBoundingClientRect(); 
         let percent=(clientX-rect.left)/rect.width;
         percent=Math.max(0,Math.min(1,percent));
         
-        // ドラッグ時のみシーク
         if(dragging && !isNaN(audio.duration)){
             audio.currentTime=percent*audio.duration;
         }
     }
     
-    // プログレスバークリック操作のラップ (タッチ対応のため、clickは削除)
     progressContainer.addEventListener('click', e => {
       if (dragging || isNaN(audio.duration)) return; 
-      
       const rect = progressContainer.getBoundingClientRect();
       let percent = (e.clientX - rect.left) / rect.width;
       percent = Math.max(0, Math.min(1, percent));
       audio.currentTime = percent * audio.duration;
     });
 
-    // ノブのイベント - マウス
     knob.addEventListener('mousedown',(e)=>{ 
         e.preventDefault(); 
         dragging=true;
     });
-    
-    // ✅ TOUCH SUPPORT: ノブのイベント - タッチ
     knob.addEventListener('touchstart',(e)=>{ 
         e.preventDefault(); 
         dragging=true;
     });
     
-    // グローバルイベント - マウス
     document.addEventListener('mouseup',()=>dragging=false);
     document.addEventListener('mousemove', e=>{
       handleProgressMove(e.clientX);
     });
 
-    // ✅ TOUCH SUPPORT: グローバルイベント - タッチ
     document.addEventListener('touchend',()=>dragging=false);
     document.addEventListener('touchmove', e=>{
-      // touchmoveではe.touches[0].clientXを使用
       if(e.touches.length > 0) {
-        e.preventDefault(); // シーク操作中はスクロールを防ぐ
+        e.preventDefault(); 
         handleProgressMove(e.touches[0].clientX);
       }
-    }, { passive: false }); // passive: false で preventDefault() を有効にする
+    }, { passive: false }); 
 
 
-    // 再生・停止ボタン (変更なし)
     playPauseBtn.addEventListener('click', ()=>{
       
       if(audio.paused) {
           audio.play().then(() => {
-            // 再生成功時
             playPauseIcon.src = getCacheBustedUrl('pause.png'); 
             playPauseIcon.alt = 'Pause';
           }).catch(e => {
-            // 再生ブロック時
             console.error("Audio play blocked:", e);
             playPauseIcon.src = getCacheBustedUrl('play.png'); 
             playPauseIcon.alt = 'Play';
@@ -806,25 +760,20 @@ function initializeApp(cfg, onReady) {
     nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length); });
     prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
 
-    // 初期曲のロード (再生はしない)
     if (list.length > 0) {
-        // メタデータがロードされたらonReadyを実行する一時的なリスナーを登録
         audio.addEventListener('loadedmetadata', onReady, { once: true });
-        
         playMusic(0); 
     } else {
-        onReady(); // 音楽リストが空の場合はすぐにコールバックを実行
+        onReady(); 
     }
 }
 
 
-// ---------------- アセットのプリロードと初期化の制御 ----------------
-
+// ---------------- アセットのプリロードと初期化の制御 (省略) ----------------
 document.addEventListener('DOMContentLoaded', () => {
     const loadingProgressBar = document.getElementById('loading-progress-bar');
-    const loadingPercentDisplay = document.getElementById('loading-percent'); // 💡 NEW: パーセンテージ表示要素を取得
+    const loadingPercentDisplay = document.getElementById('loading-percent');
     
-    // 1. config.json のロードから開始
     fetch(getCacheBustedUrl('config.json')) 
       .then(r => {
         if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
@@ -832,38 +781,23 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .then(cfg => {
         
-        // 2. プリロードするアセットリストの定義
-        const assetsToLoad = [
-            'icon.png', 'prev.png', 'play.png', 'next.png',
-        ];
-
-        // リンクアイコンを追加
-        if (cfg.links) {
-            cfg.links.forEach(item => {
-                if (item.icon) assetsToLoad.push(item.icon);
-            });
-        }
-        // 最初の音楽ファイルを追加 (全曲ロードすると時間がかかりすぎるため)
-        if (cfg.musics && cfg.musics.length > 0) {
-            assetsToLoad.push(cfg.musics[0]); 
-        }
+        const assetsToLoad = ['icon.png', 'prev.png', 'play.png', 'next.png'];
+        if (cfg.links) { cfg.links.forEach(item => { if (item.icon) assetsToLoad.push(item.icon); }); }
+        if (cfg.musics && cfg.musics.length > 0) { assetsToLoad.push(cfg.musics[0]); }
         
         const totalAssets = assetsToLoad.length;
         let loadedCount = 0;
         
-        // アセットのロード関数
         const loadAsset = (assetPath) => {
             return new Promise((resolve, reject) => {
                 const cacheBustedUrl = getCacheBustedUrl(assetPath);
                 
-                // 画像ファイルのロード
                 if (assetPath.match(/\.(png|jpg|jpeg|gif)$/i)) {
                     const img = new Image();
                     img.onload = resolve;
-                    img.onerror = resolve; // ロード失敗しても進行を止めない
+                    img.onerror = resolve; 
                     img.src = cacheBustedUrl;
                 } 
-                // 音声ファイルのロード
                 else if (assetPath.match(/\.(mp3|wav|ogg)$/i)) {
                     const audioPreload = new Audio();
                     audioPreload.addEventListener('canplaythrough', resolve, {once: true});
@@ -871,7 +805,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     audioPreload.src = cacheBustedUrl;
                     audioPreload.load();
                 } 
-                // その他のファイル（主にリンクアイコン以外の、念のためのもの）
                 else {
                     fetch(cacheBustedUrl).then(resolve).catch(resolve);
                 }
@@ -879,45 +812,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadedCount++;
                 const progress = (loadedCount / totalAssets) * 100;
                 loadingProgressBar.style.width = `${progress}%`;
-                
-                // 💡 NEW: パーセンテージ表示を更新
                 if (loadingPercentDisplay) {
                     loadingPercentDisplay.innerText = `${Math.round(progress)}%`;
                 }
             });
         };
         
-        // 3. ロードの開始
         const assetPromises = assetsToLoad.map(loadAsset);
 
-        // 4. 全てのアセットのロード完了を待つ
         Promise.all(assetPromises).then(() => {
-            // ゲージを100%に
             loadingProgressBar.style.width = '100%';
-            if (loadingPercentDisplay) { 
-                loadingPercentDisplay.innerText = '100%'; // 確実に100%を表示
-            }
+            if (loadingPercentDisplay) { loadingPercentDisplay.innerText = '100%'; }
             
-            // アプリケーションの初期化とEnter画面への遷移（フェードアニメーションあり）
             setTimeout(() => { 
-                // initializeAppを呼び出し、初期曲のメタデータロードが完了してからshowEnterScreenを呼び出す
                 initializeApp(cfg, showEnterScreen); 
             }, 100); 
         });
 
       })
       .catch(error => {
-        // config.jsonのロード失敗時（致命的エラー）
         console.error("Failed to load config.json. Initializing with empty settings.", error);
-        
-        // エラー時でもEnter画面へ遷移
         const dummyConfig = { musics: [], links: [], other: { iconGlowColor: '255,255,255', fontColor: '255,255,255', description: 'エラー: 設定を読み込めませんでした', version: 'v1.0' } };
         loadingProgressBar.style.width = '100%';
-        if (loadingPercentDisplay) { 
-            loadingPercentDisplay.innerText = '100%';
-        }
+        if (loadingPercentDisplay) { loadingPercentDisplay.innerText = '100%'; }
         setTimeout(() => {
-             initializeApp(dummyConfig, showEnterScreen); // 音楽がないのですぐにshowEnterScreenが呼ばれる
+             initializeApp(dummyConfig, showEnterScreen);
         }, 100);
       });
 });
