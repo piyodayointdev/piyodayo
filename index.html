@@ -450,6 +450,7 @@ function initializeApp(cfg, onReady) {
     const playPauseIcon = document.getElementById('play-pause-icon'); 
     const linkBox = document.getElementById('links-box');
     const musicBox = document.querySelector('.music-box'); 
+    const progressContainer=document.getElementById('progress-container'); 
     const progressBar=document.getElementById('progress-bar');
     const knob=document.getElementById('progress-knob');
     const playPauseBtn=document.getElementById('play-pause');
@@ -604,11 +605,30 @@ function initializeApp(cfg, onReady) {
     }
 
     let volumeDragging = false;
+    
+    // マウス/タッチ共通の処理関数
+    function handleVolumeMove(clientX) {
+        if (volumeDragging) {
+            const rect = volumeContainer.getBoundingClientRect();
+            let volume = (clientX - rect.left) / rect.width;
+            volume = Math.max(0, Math.min(1, volume)); 
+            audio.volume = volume;
+            updateVolumeDisplay();
+        }
+    }
+
+    // マウスイベント
     volumeKnob.addEventListener('mousedown', (e) => {
         e.preventDefault(); 
         volumeDragging = true;
     });
     
+    // ✅ TOUCH SUPPORT: 音量ノブのタッチスタート
+    volumeKnob.addEventListener('touchstart', (e) => {
+        e.preventDefault(); 
+        volumeDragging = true;
+    });
+
     // プログレスバークリック操作
     volumeContainer.addEventListener('click', e => {
       if (volumeDragging) return; 
@@ -620,17 +640,27 @@ function initializeApp(cfg, onReady) {
       updateVolumeDisplay();
     });
 
+    // ✅ TOUCH SUPPORT: 音量バーのタップ操作
+    volumeContainer.addEventListener('touchstart', e => {
+      // ドラッグではない単なるタップとして処理
+      if (e.target !== volumeKnob) {
+          const rect = volumeContainer.getBoundingClientRect();
+          let volume = (e.touches[0].clientX - rect.left) / rect.width;
+          volume = Math.max(0, Math.min(1, volume)); 
+          audio.volume = volume;
+          updateVolumeDisplay();
+      }
+    }, { passive: true });
+
+
     // グローバルマウスイベント
     document.addEventListener('mouseup', () => volumeDragging = false);
-    document.addEventListener('mousemove', e => {
-      if (volumeDragging) {
-        const rect = volumeContainer.getBoundingClientRect();
-        let volume = (e.clientX - rect.left) / rect.width;
-        volume = Math.max(0, Math.min(1, volume)); 
-        audio.volume = volume;
-        updateVolumeDisplay();
-      }
-    });
+    document.addEventListener('mousemove', e => handleVolumeMove(e.clientX));
+    
+    // ✅ TOUCH SUPPORT: グローバルタッチイベント
+    document.addEventListener('touchend', () => volumeDragging = false);
+    document.addEventListener('touchmove', e => handleVolumeMove(e.touches[0].clientX), { passive: false });
+
 
     updateVolumeDisplay(); // 初期表示を設定
     // --------------------------------------------------------
@@ -645,12 +675,7 @@ function initializeApp(cfg, onReady) {
       // enterOverlayClickで直接アイコンをpauseに更新するため、ここではそのまま。
     }
 
-    /**
-     * 指定されたインデックスの曲をロードし、オプションで再生を開始する
-     * @param {number} index - 音楽リストのインデックス
-     * @param {boolean} [shouldPlay=false] - ロード後にすぐに再生を開始するかどうか
-     */
-    function playMusic(index, shouldPlay = false){ // 💡 修正: shouldPlayをデフォルトfalseで追加
+    function playMusic(index){
       current=index;
       
       if (!list[current]) {
@@ -666,23 +691,9 @@ function initializeApp(cfg, onReady) {
       const songName = getSongName(list[current]);
       currentMusicText.innerHTML = songName.replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
       
-      // 音楽の再生状態をshouldPlayに基づいて設定
-      if (shouldPlay) { // 💡 修正: shouldPlayがtrueの場合のみ再生開始
-          audio.play().then(() => {
-            // 再生成功時
-            playPauseIcon.src = getCacheBustedUrl('pause.png');
-            playPauseIcon.alt = 'Pause';
-          }).catch(e => {
-            // 再生がブロックされた場合
-            console.error("Audio auto-play blocked:", e);
-            playPauseIcon.src = getCacheBustedUrl('play.png');
-            playPauseIcon.alt = 'Play';
-          });
-      } else {
-        // 停止状態から開始する場合（初回ロード時など）
-        playPauseIcon.src = getCacheBustedUrl('play.png');
-        playPauseIcon.alt = 'Play';
-      }
+      // 音楽は停止状態から始める
+      playPauseIcon.src = getCacheBustedUrl('play.png');
+      playPauseIcon.alt = 'Play';
 
       // 曲名が長い場合のマーキー処理
       setTimeout(() => {
@@ -715,27 +726,63 @@ function initializeApp(cfg, onReady) {
       currentTimeLabel.innerText=formatTime(audio.currentTime);
     });
 
-    audio.addEventListener('ended', ()=>{ 
-        playMusic((current+1)%list.length, true); // 💡 修正: 次の曲をロードし、すぐに再生 (true) を指示
+    audio.addEventListener('ended', ()=>{ playMusic((current+1)%list.length); });
+
+    // ---------------- プログレスバー操作 ----------------
+    let dragging=false;
+    
+    // マウス/タッチ共通の処理関数
+    function handleProgressMove(clientX) {
+        const rect=progressContainer.getBoundingClientRect(); // progressContainerを使用
+        let percent=(clientX-rect.left)/rect.width;
+        percent=Math.max(0,Math.min(1,percent));
+        
+        // ドラッグ時のみシーク
+        if(dragging && !isNaN(audio.duration)){
+            audio.currentTime=percent*audio.duration;
+        }
+    }
+    
+    // プログレスバークリック操作のラップ (タッチ対応のため、clickは削除)
+    progressContainer.addEventListener('click', e => {
+      if (dragging || isNaN(audio.duration)) return; 
+      
+      const rect = progressContainer.getBoundingClientRect();
+      let percent = (e.clientX - rect.left) / rect.width;
+      percent = Math.max(0, Math.min(1, percent));
+      audio.currentTime = percent * audio.duration;
     });
 
-    // プログレスバー操作
-    let dragging=false;
+    // ノブのイベント - マウス
     knob.addEventListener('mousedown',(e)=>{ 
         e.preventDefault(); 
         dragging=true;
     });
+    
+    // ✅ TOUCH SUPPORT: ノブのイベント - タッチ
+    knob.addEventListener('touchstart',(e)=>{ 
+        e.preventDefault(); 
+        dragging=true;
+    });
+    
+    // グローバルイベント - マウス
     document.addEventListener('mouseup',()=>dragging=false);
     document.addEventListener('mousemove', e=>{
-      if(dragging){
-        const rect=document.getElementById('progress-container').getBoundingClientRect();
-        let percent=(e.clientX-rect.left)/rect.width;
-        percent=Math.max(0,Math.min(1,percent));
-        audio.currentTime=percent*audio.duration;
-      }
+      handleProgressMove(e.clientX);
     });
 
-    // 再生・停止ボタン
+    // ✅ TOUCH SUPPORT: グローバルイベント - タッチ
+    document.addEventListener('touchend',()=>dragging=false);
+    document.addEventListener('touchmove', e=>{
+      // touchmoveではe.touches[0].clientXを使用
+      if(e.touches.length > 0) {
+        e.preventDefault(); // シーク操作中はスクロールを防ぐ
+        handleProgressMove(e.touches[0].clientX);
+      }
+    }, { passive: false }); // passive: false で preventDefault() を有効にする
+
+
+    // 再生・停止ボタン (変更なし)
     playPauseBtn.addEventListener('click', ()=>{
       
       if(audio.paused) {
@@ -756,15 +803,15 @@ function initializeApp(cfg, onReady) {
       }
     });
     
-    nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length, !audio.paused); }); // 💡 修正: 再生中なら次の曲も再生
-    prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length, !audio.paused); }); // 💡 修正: 再生中なら前の曲も再生
+    nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length); });
+    prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
 
     // 初期曲のロード (再生はしない)
     if (list.length > 0) {
         // メタデータがロードされたらonReadyを実行する一時的なリスナーを登録
         audio.addEventListener('loadedmetadata', onReady, { once: true });
         
-        playMusic(0, false); // 💡 修正: 再生開始指示なし (shouldPlay=false) を明示
+        playMusic(0); 
     } else {
         onReady(); // 音楽リストが空の場合はすぐにコールバックを実行
     }
@@ -775,7 +822,7 @@ function initializeApp(cfg, onReady) {
 
 document.addEventListener('DOMContentLoaded', () => {
     const loadingProgressBar = document.getElementById('loading-progress-bar');
-    const loadingPercentDisplay = document.getElementById('loading-percent'); 
+    const loadingPercentDisplay = document.getElementById('loading-percent'); // 💡 NEW: パーセンテージ表示要素を取得
     
     // 1. config.json のロードから開始
     fetch(getCacheBustedUrl('config.json')) 
@@ -833,7 +880,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const progress = (loadedCount / totalAssets) * 100;
                 loadingProgressBar.style.width = `${progress}%`;
                 
-                // パーセンテージ表示を更新
+                // 💡 NEW: パーセンテージ表示を更新
                 if (loadingPercentDisplay) {
                     loadingPercentDisplay.innerText = `${Math.round(progress)}%`;
                 }
