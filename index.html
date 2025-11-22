@@ -5,46 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Piyo Profile</title>
 
-<script>
-// =========================================================
-// キャッシュを無視するための共通関数とタイムスタンプ
-// =========================================================
-const TIMESTAMP = new Date().getTime(); 
-
-function getCacheBustedUrl(url) {
-    if (url.includes('?')) {
-        return `${url}&t=${TIMESTAMP}`;
-    }
-    return `${url}?t=${TIMESTAMP}`;
-}
-
-// 毎回開くたびに新しいフォントが使用されるように、キャッシュを無効化する処理
-(function() {
-    // @font-faceルールにキャッシュ無効化のためのクエリパラメータを追加
-    const fontRules = `
-        @font-face {
-            font-family: 'Jfont';
-            src: url('${getCacheBustedUrl('Jfont.woff')}') format('woff');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap; 
-        }
-        @font-face {
-            font-family: 'Efont';
-            src: url('${getCacheBustedUrl('Efont.woff')}') format('woff');
-            font-weight: normal;
-            font-style: normal;
-            font-display: swap;
-        }
-    `;
-    
-    // スタイルタグを作成し、定義したルールを<head>に挿入
-    const style = document.createElement('style');
-    style.textContent = fontRules;
-    document.head.appendChild(style);
-})();
-</script>
-
 <style>
 /* ---------------- 基本スタイル ---------------- */
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -124,20 +84,19 @@ body,html{
     filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
 }
 
-/* ---------------- プログレスバー (ベースCSSを修正) ---------------- */
+/* ---------------- プログレスバー ---------------- */
 .progress-container{
     width:100%;
-    height:8px; /* デフォルトの高さ (見た目とデスクトップのヒットエリア) */
+    height:8px; 
     background:rgba(255,255,255,0.2);border-radius:4px;
     overflow:hidden;
     margin-top:10px;cursor:pointer;position:relative;
 }
 .progress-bar{
-    width:0%;
-    height:8px; /* ✅ 変更: height:100% から固定の高さに変更 */
+    /* 幅はJSで動的に設定されます */
+    height:8px; 
     background:rgba(255,255,255,0.7);
     border-radius:4px;
-    /* ✅ 追加: 垂直方向の中央揃え (コンテナの高さが変わっても中央を維持) */
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -177,20 +136,19 @@ body,html{
     opacity: 0.8;
 }
 
-/* ---------------- 音量バー (ベースCSSを修正) ---------------- */
+/* ---------------- 音量バー ---------------- */
 .volume-container{
     width:100%;
-    height:6px; /* デフォルトの高さ (見た目とデスクトップのヒットエリア) */
+    height:6px; 
     background:rgba(255,255,255,0.2);border-radius:3px;
     overflow:hidden;
     margin-top:5px;cursor:pointer;position:relative;
 }
 .volume-bar{
-    width:100%;
-    height:6px; /* ✅ 変更: height:100% から固定の高さに変更 */
+    /* 幅はJSで動的に設定されます */
+    height:6px; 
     background:rgba(255,255,255,0.7);
     border-radius:3px;
-    /* ✅ 追加: 垂直方向の中央揃え (コンテナの高さが変わっても中央を維持) */
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
@@ -201,6 +159,51 @@ body,html{
     position:absolute;top:50%;transform:translate(-50%,-50%);cursor:pointer;
     left: 100%;
 }
+
+/* ---------------- アニメーションON/OFFボタン ---------------- */
+.animation-box {
+    position: absolute; 
+    top: 25px; 
+    right: 250px; /* volume-box (200px) + margin */
+    width: 40px; 
+    height: 40px;
+    z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: top 0.3s ease, right 0.3s ease, left 0.3s ease;
+}
+.animation-box .control-button {
+    width: 40px;
+    height: 40px;
+}
+
+/* ---------------- アニメーション無効化クラス ---------------- */
+/* bodyに.animation-disabledが追加された際のスタイル */
+.animation-disabled .center-box, 
+.animation-disabled .music-box, 
+.animation-disabled .links, 
+.animation-disabled #version {
+    /* 座標の滑らかな遷移（CSS Transition）を無効化 */
+    transition: none !important; 
+}
+
+/* グローアニメーション、シャドウを無効化 */
+.animation-disabled .time-labels span {
+    animation: none !important;
+    text-shadow: 0 0 5px rgba(255,255,255,0.7) !important;
+}
+
+.animation-disabled .icon { 
+    /* iconのbox-shadowを通常の状態に戻す（グローを消すため）*/
+    box-shadow: 0 0 10px rgba(0,0,0,0.4) !important;
+}
+
+.animation-disabled .links img {
+    /* リンクアイコンのドロップシャドウを無効化 */
+    filter: none !important;
+}
+/* ------------------------------------------------------------ */
 
 /* ---------------- 下部リンク / バージョン ---------------- */
 .links{
@@ -294,6 +297,12 @@ body,html{
         left: 20px;
         bottom: auto;
     }
+    
+    /* アニメーションボタンをボリュームバーの左に配置 */
+    .animation-box {
+        top: 25px;
+        right: 80px; 
+    }
 }
 
 @media (max-width: 500px) {
@@ -307,27 +316,22 @@ body,html{
     .music-info { font-size: 18px; }
 }
 
-/* ---------------- ✅ タッチデバイス向けヒットエリア拡張 ---------------- */
-/* pointer: coarse はタッチデバイス（指での操作）を検出するために使用 */
+/* ---------------- タッチデバイス向けヒットエリア拡張 (省略) ---------------- */
 @media (hover: none) and (pointer: coarse), (max-width: 900px) {
     
-    /* ミュージックプレイヤーのプログレスバー: ヒットエリアを約2倍 (8px -> 16px) */
     .music-box .progress-container {
         height: 16px; 
-        overflow: visible; /* ノブがはみ出してもOK */
+        overflow: visible; 
     }
-    /* ノブのサイズを大きくし、操作性を向上 */
     .progress-knob {
         width: 20px;
         height: 20px;
     }
     
-    /* 音量バーのコンテナ: ヒットエリアを約4倍 (6px -> 24px) */
     .volume-box .volume-container {
         height: 24px; 
         overflow: visible;
     }
-    /* ノブのサイズを大きくし、操作性を向上 */
     .volume-knob {
         width: 18px;
         height: 18px;
@@ -368,6 +372,12 @@ body,html{
   </div>
 </div>
 
+<div class="animation-box" id="animation-box">
+  <button class="control-button" id="animation-toggle">
+    <img src="on.png" alt="Animation Toggle" id="animation-toggle-icon" class="control-icon">
+  </button>
+</div>
+
 <div class="center-box" id="center-box">
   <img src="icon.png" class="icon" id="icon-img">
   <div class="name" id="name-text">ぴよだよ～＾＾</div>
@@ -402,6 +412,45 @@ body,html{
 
 <script>
 // =========================================================
+// キャッシュを無視するための共通関数とタイムスタンプ
+// =========================================================
+const TIMESTAMP = new Date().getTime(); 
+
+function getCacheBustedUrl(url) {
+    if (url.includes('?')) {
+        return `${url}&t=${TIMESTAMP}`;
+    }
+    return `${url}?t=${TIMESTAMP}`;
+}
+
+// 毎回開くたびに新しいフォントが使用されるように、キャッシュを無効化する処理
+(function() {
+    // @font-faceルールにキャッシュ無効化のためのクエリパラメータを追加
+    const fontRules = `
+        @font-face {
+            font-family: 'Jfont';
+            src: url('${getCacheBustedUrl('Jfont.woff')}') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap; 
+        }
+        @font-face {
+            font-family: 'Efont';
+            src: url('${getCacheBustedUrl('Efont.woff')}') format('woff');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+    `;
+    
+    // スタイルタグを作成し、定義したルールを<head>に挿入
+    const style = document.createElement('style');
+    style.textContent = fontRules;
+    document.head.appendChild(style);
+})();
+
+
+// =========================================================
 // 静的アセットのキャッシュ無視設定
 // =========================================================
 document.getElementById('icon-img').src = getCacheBustedUrl('icon.png');
@@ -413,21 +462,26 @@ if (videoSource) {
 // =========================================================
 
 
-// ---------------- 背景パララックス (省略) ----------------
+// ---------------- 背景パララックス (✅ 修正: 制御ロジックを削除) ----------------
 const bg = document.getElementById('background-video');
 let mouseX=0, mouseY=0, currentX=0, currentY=0;
 document.addEventListener('mousemove', e=>{
   mouseX=(e.clientX-window.innerWidth/2)*0.1;
   mouseY=(e.clientY-window.innerHeight/2)*0.1;
 });
+
 function animateBackground(){
   let dx=mouseX-currentX, dy=mouseY-currentY;
   let dist=Math.sqrt(dx*dx+dy*dy);
   let speed=dist>270?4:dist/270*4;
   if(dist>0){currentX+=dx/dist*speed; currentY+=dy/dist*speed;}
   bg.style.transform=`translate3d(calc(-50% + ${currentX}px), calc(-50% + ${currentY}px),0) scale(1.1)`;
-  requestAnimationFrame(animateBackground);
+  // 常にアニメーションを継続
+  requestAnimationFrame(animateBackground); 
 }
+// アプリケーション初期化前にループを開始
+requestAnimationFrame(animateBackground);
+
 
 // ---------------- Enter画面とLoading画面の制御 (省略) ----------------
 function enterOverlayClick() {
@@ -469,11 +523,8 @@ function showEnterScreen() {
 
 /**
  * メインアプリケーションの初期化
- * @param {Object} cfg - config.jsonの内容
- * @param {Function} onReady - 初期の曲のメタデータがロードされた後に実行されるコールバック
  */
 function initializeApp(cfg, onReady) {
-    animateBackground();
     
     const compactQuery = window.matchMedia('(max-width: 900px), (max-aspect-ratio: 1/1)');
     const glow = document.getElementById('glow');
@@ -497,7 +548,10 @@ function initializeApp(cfg, onReady) {
     const volumeBar = document.getElementById('volume-bar');
     const volumeKnob = document.getElementById('volume-knob');
     const volumePercent = document.getElementById('volume-percent');
-
+    
+    // Animation Toggle Elements
+    const ANIMATION_TOGGLE_BTN = document.getElementById('animation-toggle');
+    const ANIMATION_TOGGLE_ICON = document.getElementById('animation-toggle-icon');
 
     let list = cfg.musics || [], current = 0;
 
@@ -527,10 +581,8 @@ function initializeApp(cfg, onReady) {
       linkBox.appendChild(a);
     });
     
-    // =========================================================
-    // リンクとミュージックプレイヤーの重なり防止ロジック (省略)
-    // =========================================================
-    function calculateLinkHalfWidth() {
+    // ... (リンクとミュージックプレイヤーの重なり防止ロジックは省略) ...
+    function calculateLinkHalfWidth() { 
         const linksCount = cfg.links ? cfg.links.length : 0;
         const totalWidth = linksCount * 60; 
         return totalWidth / 2;
@@ -556,12 +608,11 @@ function initializeApp(cfg, onReady) {
         }
     }
     const SAFE_MARGIN_VERTICAL = 50; 
-    function adjustLinkPosition() {
+    function adjustLinkPosition() { 
         if (!compactQuery.matches) {
             const isOverlapping = adjustPlayerPosition(calculateLinkHalfWidth());
             if (isOverlapping) {
-                centerBox.style.top = '25%'; 
-                centerBox.style.transform = 'translate(-50%, -25%)';
+                centerBox.style.top = '25%'; centerBox.style.transform = 'translate(-50%, -25%)';
                 if (!musicBox || !linkBox || !linkBox.hasChildNodes()) return;
                 const musicBoxRect = musicBox.getBoundingClientRect();
                 const musicBoxTop = musicBoxRect.top;
@@ -569,13 +620,11 @@ function initializeApp(cfg, onReady) {
                 const newBottom = musicBoxTopFromBottom + SAFE_MARGIN_VERTICAL;
                 linkBox.style.bottom = `${newBottom}px`;
             } else {
-                centerBox.style.top = '50%';
-                centerBox.style.transform = 'translate(-50%, -50%)';
+                centerBox.style.top = '50%'; centerBox.style.transform = 'translate(-50%, -50%)';
                 linkBox.style.bottom = '20px'; 
             }
         } else {
-            centerBox.style.top = ''; 
-            centerBox.style.transform = ''; 
+            centerBox.style.top = ''; centerBox.style.transform = ''; 
             if (!musicBox || !linkBox || !linkBox.hasChildNodes()) return;
             const musicBoxRect = musicBox.getBoundingClientRect();
             const musicBoxTop = musicBoxRect.top;
@@ -588,58 +637,114 @@ function initializeApp(cfg, onReady) {
     window.addEventListener('resize', adjustLinkPosition); 
     setTimeout(adjustLinkPosition, 200); 
     // =========================================================
-
-    // ---------------- 音量制御ロジック (タッチサポート済み) ----------------
     
+    // ---------------- ✅ 追従機能に必要な変数と設定 ----------------
+    let dragging=false;
+    let volumeDragging = false;
+    
+    // Animation State
+    let isAnimationEnabled = true;
+    
+    // ノブの「現在」の追従位置を保持する変数（0.0〜1.0）
+    let progressCurrentPercent = 0; 
+    let volumeCurrentPercent = 0; 
+    
+    // ノブの「目標」位置を保持する変数（ドラッグ中はマウス位置、非ドラッグ中はオーディオの位置）
+    let progressTargetPercent = 0;
+    let volumeTargetPercent = audio.volume;
+    
+    // 追従の速度をconfigからロードし、0.0〜1.0にクランプする
+    const PROGRESS_EASING_FACTOR = cfg.other.progressEasing !== undefined ? 
+                                   Math.max(0, Math.min(1, cfg.other.progressEasing)) : 0.3;
+    const VOLUME_EASING_FACTOR = cfg.other.volumeEasing !== undefined ? 
+                                 Math.max(0, Math.min(1, cfg.other.volumeEasing)) : 0.5;
+    // --------------------------------------------------------
+
+    // ---------------- ✅ アニメーション切り替え関数 (修正) ----------------
+    function toggleAnimation() {
+        isAnimationEnabled = !isAnimationEnabled;
+        
+        // 1. アイコンとCSSクラスの切り替え
+        ANIMATION_TOGGLE_ICON.src = getCacheBustedUrl(isAnimationEnabled ? 'on.png' : 'off.png');
+        document.body.classList.toggle('animation-disabled', !isAnimationEnabled);
+
+        // 背景アニメーションの制御は行わない
+    }
+    ANIMATION_TOGGLE_BTN.addEventListener('click', toggleAnimation);
+    // ---------------------------------------------------------------------------------
+
+    // ---------------- 音量制御ロジック ----------------
     audio.volume = 1.0; 
     
     function updateVolumeDisplay() {
         const percent = audio.volume * 100;
-        volumeBar.style.width = percent + '%';
-        volumeKnob.style.left = percent + '%';
         volumePercent.innerText = Math.round(percent) + '%';
     }
 
-    let volumeDragging = false;
-    
+    // マウス/タッチ移動時の目標位置設定ロジック (描画は animateKnobFollow に任せる)
     function handleVolumeMove(clientX) {
-        if (volumeDragging) {
-            const rect = volumeContainer.getBoundingClientRect();
-            let volume = (clientX - rect.left) / rect.width;
-            volume = Math.max(0, Math.min(1, volume)); 
-            audio.volume = volume;
-            updateVolumeDisplay();
-        }
+        if (!volumeDragging) return;
+        
+        const rect = volumeContainer.getBoundingClientRect();
+        
+        // 1. マウス位置を目標位置 (Target) に設定 (0.0〜1.0)
+        let target = (clientX - rect.left) / rect.width;
+        volumeTargetPercent = Math.max(0, Math.min(1, target)); 
+
+        // 2. 追従ノブ位置を実際の音量として適用する
+        audio.volume = volumeCurrentPercent; // ノブの追従位置を実際の音量として適用する
+        
+        // ドラッグ中のパーセンテージ表示は目標位置(Target)で更新
+        volumePercent.innerText = Math.round(volumeTargetPercent * 100) + '%'; 
     }
 
-    volumeKnob.addEventListener('mousedown', (e) => { e.preventDefault(); volumeDragging = true; });
-    volumeKnob.addEventListener('touchstart', (e) => { e.preventDefault(); volumeDragging = true; });
+    // マウスダウンとタッチスタートでドラッグ開始情報を保存
+    volumeKnob.addEventListener('mousedown', (e) => {
+        e.preventDefault(); 
+        volumeDragging = true;
+        // 開始時に追従位置と目標位置を現在の音量にリセット
+        volumeCurrentPercent = audio.volume;
+        volumeTargetPercent = audio.volume;
+    });
+    volumeKnob.addEventListener('touchstart', (e) => {
+        e.preventDefault(); 
+        volumeDragging = true;
+        // 開始時に追従位置と目標位置を現在の音量にリセット
+        volumeCurrentPercent = audio.volume;
+        volumeTargetPercent = audio.volume;
+    });
 
+    // タップ操作 (追従なしの絶対位置設定)
     volumeContainer.addEventListener('click', e => {
       if (volumeDragging) return; 
       const rect = volumeContainer.getBoundingClientRect();
       let volume = (e.clientX - rect.left) / rect.width;
       volume = Math.max(0, Math.min(1, volume)); 
       audio.volume = volume;
-      updateVolumeDisplay();
+      // クリック操作では即座にノブも移動させる
+      volumeCurrentPercent = volume; 
+      volumeTargetPercent = volume; 
+      updateVolumeDisplay(); // パーセンテージ表示を更新
     });
 
-    volumeContainer.addEventListener('touchstart', e => {
-      if (e.target !== volumeKnob) {
-          const rect = volumeContainer.getBoundingClientRect();
-          let volume = (e.touches[0].clientX - rect.left) / rect.width;
-          volume = Math.max(0, Math.min(1, volume)); 
-          audio.volume = volume;
-          updateVolumeDisplay();
-      }
-    }, { passive: true });
-
-
-    document.addEventListener('mouseup', () => volumeDragging = false);
+    // グローバルイベント
+    document.addEventListener('mouseup', () => {
+        volumeDragging = false;
+        // ドラッグ終了時に音量パーセンテージを現在のオーディオ音量に更新し直す
+        updateVolumeDisplay(); 
+    });
     document.addEventListener('mousemove', e => handleVolumeMove(e.clientX));
-    
-    document.addEventListener('touchend', () => volumeDragging = false);
-    document.addEventListener('touchmove', e => handleVolumeMove(e.touches[0].clientX), { passive: false });
+    document.addEventListener('touchend', () => {
+        volumeDragging = false;
+        // ドラッグ終了時に音量パーセンテージを現在のオーディオ音量に更新し直す
+        updateVolumeDisplay();
+    });
+    document.addEventListener('touchmove', e => {
+        if(e.touches.length > 0) {
+            handleVolumeMove(e.touches[0].clientX);
+            e.preventDefault(); 
+        }
+    }, { passive: false });
 
     updateVolumeDisplay(); 
     // --------------------------------------------------------
@@ -648,7 +753,6 @@ function initializeApp(cfg, onReady) {
     
     function playMusic(index){
       current=index;
-      
       if (!list[current]) {
           currentMusicText.innerHTML = '---';
           currentMusicText.style.animation = 'none';
@@ -656,20 +760,19 @@ function initializeApp(cfg, onReady) {
           return;
       }
       
+      // 再生位置をリセットしてからオーディオソースを設定
+      audio.currentTime = 0; 
+
       audio.src = getCacheBustedUrl(list[current]);
       audio.load(); 
-      
       const songName = getSongName(list[current]);
       currentMusicText.innerHTML = songName.replace(/[A-Za-z0-9]/g, m=>`<span class="english">${m}</span>`);
-      
       playPauseIcon.src = getCacheBustedUrl('play.png');
       playPauseIcon.alt = 'Play';
-
       setTimeout(() => {
           const container = document.querySelector('.music-title-container');
           const containerWidth = container ? container.offsetWidth : 0;
           const textWidth = currentMusicText.offsetWidth;
-
           if (textWidth > containerWidth && containerWidth > 0) {
               const scrollDistance = containerWidth - textWidth - 5; 
               currentMusicText.style.setProperty('--scroll-offset', `${scrollDistance}px`);
@@ -688,48 +791,67 @@ function initializeApp(cfg, onReady) {
 
     audio.addEventListener('timeupdate', ()=>{
       const percent=(audio.currentTime/audio.duration)*100;
-      progressBar.style.width=percent+'%';
-      knob.style.left=percent+'%';
       currentTimeLabel.innerText=formatTime(audio.currentTime);
+      
+      // 非ドラッグ時は、オーディオの最新の位置を目標位置として設定する（ノブを追従させる）
+      if (!dragging) {
+        progressTargetPercent = percent / 100;
+      }
     });
 
     audio.addEventListener('ended', ()=>{ playMusic((current+1)%list.length); });
 
-    // ---------------- プログレスバー操作 (タッチサポート済み) ----------------
-    let dragging=false;
+    // ---------------- プログレスバー操作 ----------------
     
+    // マウス/タッチ移動時の目標位置設定ロジック (描画は animateKnobFollow に任せる)
     function handleProgressMove(clientX) {
-        const rect=progressContainer.getBoundingClientRect(); 
-        let percent=(clientX-rect.left)/rect.width;
-        percent=Math.max(0,Math.min(1,percent));
+        if (!dragging || isNaN(audio.duration)) return;
         
-        if(dragging && !isNaN(audio.duration)){
-            audio.currentTime=percent*audio.duration;
-        }
+        const rect = progressContainer.getBoundingClientRect();
+        
+        // 1. マウス位置を目標位置 (Target) に設定 (0.0〜1.0)
+        let target = (clientX - rect.left) / rect.width;
+        progressTargetPercent = Math.max(0, Math.min(1, target)); 
+        
+        // 2. 追従ノブ位置を実際の再生時間として適用する
+        // ドラッグ中は、ノブの追従位置に合わせてcurrentTimeを更新する
+        audio.currentTime = progressCurrentPercent * audio.duration;
     }
     
+    // マウスダウンとタッチスタートでドラッグ開始情報を保存
+    knob.addEventListener('mousedown',(e)=>{ 
+        e.preventDefault(); 
+        dragging=true;
+        // 開始時に追従位置と目標位置を現在の再生時間にリセット
+        progressCurrentPercent = audio.currentTime / audio.duration;
+        progressTargetPercent = progressCurrentPercent;
+    });
+    knob.addEventListener('touchstart',(e)=>{ 
+        e.preventDefault(); 
+        dragging=true;
+        // 開始時に追従位置と目標位置を現在の再生時間にリセット
+        progressCurrentPercent = audio.currentTime / audio.duration;
+        progressTargetPercent = progressCurrentPercent;
+    });
+    
+    // タップ操作 (追従なしの絶対位置設定)
     progressContainer.addEventListener('click', e => {
       if (dragging || isNaN(audio.duration)) return; 
       const rect = progressContainer.getBoundingClientRect();
       let percent = (e.clientX - rect.left) / rect.width;
       percent = Math.max(0, Math.min(1, percent));
       audio.currentTime = percent * audio.duration;
+      // クリック操作では即座にノブも移動させる
+      progressCurrentPercent = percent;
+      progressTargetPercent = percent;
     });
 
-    knob.addEventListener('mousedown',(e)=>{ 
-        e.preventDefault(); 
-        dragging=true;
-    });
-    knob.addEventListener('touchstart',(e)=>{ 
-        e.preventDefault(); 
-        dragging=true;
-    });
-    
+
+    // グローバルイベント
     document.addEventListener('mouseup',()=>dragging=false);
     document.addEventListener('mousemove', e=>{
       handleProgressMove(e.clientX);
     });
-
     document.addEventListener('touchend',()=>dragging=false);
     document.addEventListener('touchmove', e=>{
       if(e.touches.length > 0) {
@@ -760,6 +882,55 @@ function initializeApp(cfg, onReady) {
     nextBtn.addEventListener('click', ()=>{ playMusic((current+1)%list.length); });
     prevBtn.addEventListener('click', ()=>{ playMusic((current-1+list.length)%list.length); });
 
+    // ---------------- ✅ ノブ追従アニメーションループ ----------------
+    function animateKnobFollow() {
+        // イージングファクターをアニメーション状態によって切り替え
+        const progressEasing = isAnimationEnabled ? PROGRESS_EASING_FACTOR : 1.0;
+        const volumeEasing = isAnimationEnabled ? VOLUME_EASING_FACTOR : 1.0;
+        
+        // プログレスノブの追従計算
+        let progressDiff = progressTargetPercent - progressCurrentPercent;
+        if (Math.abs(progressDiff) > 0.0001) {
+            // C = C + (T - C) * Factor
+            progressCurrentPercent += progressDiff * progressEasing; 
+        } else if (!dragging) {
+            // 差が微小でドラッグ中でない場合は、目標値に固定
+            progressCurrentPercent = progressTargetPercent;
+        }
+        
+        // ノブの位置とプログレスバーの幅を更新
+        knob.style.left = progressCurrentPercent * 100 + '%';
+        progressBar.style.width = progressCurrentPercent * 100 + '%'; 
+        
+        // 音量ノブの追従計算
+        let volumeDiff = volumeTargetPercent - volumeCurrentPercent;
+        if (Math.abs(volumeDiff) > 0.0001) {
+            // C = C + (T - C) * Factor
+            volumeCurrentPercent += volumeDiff * volumeEasing;
+        } else if (!volumeDragging) {
+             // 差が微小でドラッグ中でない場合は、目標値に固定
+            volumeCurrentPercent = volumeTargetPercent;
+        }
+        
+        // ノブの位置と音量バーの幅を更新
+        volumeKnob.style.left = volumeCurrentPercent * 100 + '%';
+        volumeBar.style.width = volumeCurrentPercent * 100 + '%';
+        
+        // ドラッグ中はノブの追従位置を実際の音量/再生時間に適用
+        if (dragging) {
+            audio.currentTime = progressCurrentPercent * audio.duration;
+        }
+        if (volumeDragging) {
+            audio.volume = volumeCurrentPercent;
+        }
+
+        requestAnimationFrame(animateKnobFollow);
+    }
+    
+    // アニメーションループを開始
+    animateKnobFollow();
+    // ------------------------------------------------------------------
+
     if (list.length > 0) {
         audio.addEventListener('loadedmetadata', onReady, { once: true });
         playMusic(0); 
@@ -781,7 +952,7 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .then(cfg => {
         
-        const assetsToLoad = ['icon.png', 'prev.png', 'play.png', 'next.png'];
+        const assetsToLoad = ['icon.png', 'prev.png', 'play.png', 'next.png', 'on.png', 'off.png']; 
         if (cfg.links) { cfg.links.forEach(item => { if (item.icon) assetsToLoad.push(item.icon); }); }
         if (cfg.musics && cfg.musics.length > 0) { assetsToLoad.push(cfg.musics[0]); }
         
